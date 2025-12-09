@@ -57,4 +57,5 @@ sessions/
 data/
 
 # ChromaDB data (if we add it later)
-chroma_db/
+chroma_db/vector_store/
+knowledge_base/
