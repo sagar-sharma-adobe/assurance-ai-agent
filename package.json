@@ -1,4 +1,33 @@
 {
-  "name": "assurance_ai_agent",
-  "packageManager": "yarn@4.5.2"
+  "name": "assurance-ai-agent",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "AI agent for Adobe Assurance debugging",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node test-ollama.js"
+  },
+  "keywords": [
+    "adobe",
+    "assurance",
+    "ai",
+    "debugging",
+    "ollama",
+    "langchain"
+  ],
+  "author": "sagsharma@adobe.com",
+  "license": "MIT",
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
+  "dependencies": {
+    "@langchain/community": "^0.3.58",
+    "@langchain/core": "^0.3.79",
+    "@langchain/ollama": "^1.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "langchain": "^1.1.5",
+    "uuid": "^13.0.0"
+  }
 }
