@@ -31,6 +31,25 @@ npm start
 
 The server will be available at `http://localhost:3001`
 
+---
+
+## 📤 For Client Developers: Uploading Events
+
+**Working on the client side?** See the complete guide:
+
+### 👉 **[CLIENT_UPLOAD_GUIDE.md](./CLIENT_UPLOAD_GUIDE.md)** 👈
+
+This guide covers:
+- ✅ Chunked upload implementation (for 500-1500 event sessions)
+- ✅ React/JavaScript code examples
+- ✅ Progress tracking and error handling
+- ✅ Production-ready implementation with retry logic
+- ✅ Testing and troubleshooting
+
+**TL;DR:** Split events into chunks of 100, upload sequentially, show progress to users.
+
+---
+
 ## Prerequisites
 
 - **Node.js** v18+ 
@@ -130,7 +149,13 @@ GET http://localhost:3001/api/sessions
 ```
 Returns all active sessions with metadata.
 
-### Upload Assurance Events
+### Get Upload Configuration
+```bash
+GET http://localhost:3001/api/events/config
+```
+Returns recommended settings for chunked uploads (chunk size, limits, etc.).
+
+### Upload Assurance Events (Chunked Upload Support)
 ```bash
 POST http://localhost:3001/api/events/upload
 Content-Type: application/json
@@ -144,10 +169,21 @@ Content-Type: application/json
       "timestamp": "2025-12-10T10:00:00Z",
       "payload": { "action": "buttonClick" }
     }
-  ]
+  ],
+  "chunkInfo": {
+    "current": 1,
+    "total": 15,
+    "isLast": false
+  }
 }
 ```
 Uploads Assurance events to a session and creates vector embeddings for semantic search.
+
+**⚡ Performance Note:** For large event batches (500-1500 events):
+- Split into chunks of 100 events for optimal performance
+- Max 200 events per request (enforced)
+- Include `chunkInfo` for progress tracking
+- See [CLIENT_UPLOAD_GUIDE.md](./CLIENT_UPLOAD_GUIDE.md) for implementation examples
 
 ### Search Events Semantically
 ```bash

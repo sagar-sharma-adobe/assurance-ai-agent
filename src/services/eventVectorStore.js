@@ -81,51 +81,79 @@ export async function saveEventVectorStore(sessionId, vectorStore) {
 /**
  * Add Assurance events to session vector store
  * 
- * INTEGRATION POINT: Team members should implement event parsing here
+ * Optimized for batch processing:
+ * - Processes events in batches to optimize memory usage
+ * - Formats events for semantic search
+ * - Handles large event arrays efficiently
+ * 
+ * INTEGRATION POINT: Team members should customize event parsing here
  * 
  * @param {HNSWLib} vectorStore - Session's event vector store
  * @param {Array} events - Array of Assurance event objects
+ * @param {number} batchSize - Optional batch size (default: from config)
  * @returns {Promise<void>}
  */
-export async function addEventsToVectorStore(vectorStore, events) {
+export async function addEventsToVectorStore(
+  vectorStore,
+  events,
+  batchSize = null
+) {
   if (!events || events.length === 0) {
     return;
   }
-  
+
+  // Import batch size from config if not provided
+  if (!batchSize) {
+    const { EMBEDDING_BATCH_SIZE } = await import("../config/constants.js");
+    batchSize = EMBEDDING_BATCH_SIZE;
+  }
+
   try {
-    // TODO: Team to implement - Parse and format events for embedding
-    // Current implementation is a basic example
-    
-    const eventTexts = events.map(event => {
-      // Format event as searchable text
-      // Team can customize this based on event structure
-      return `
-Event Type: ${event.type || 'unknown'}
-Event Name: ${event.name || 'unnamed'}
-Timestamp: ${event.timestamp || 'unknown'}
+    const startTime = Date.now();
+
+    // Process events in batches to optimize Ollama embedding calls
+    for (let i = 0; i < events.length; i += batchSize) {
+      const batch = events.slice(i, i + batchSize);
+
+      // Format batch events as searchable text
+      // TODO: Team can customize this based on event structure
+      const eventTexts = batch.map((event) => {
+        return `
+Event Type: ${event.type || "unknown"}
+Event Name: ${event.name || "unnamed"}
+Timestamp: ${event.timestamp || "unknown"}
 Payload: ${JSON.stringify(event.payload || {}, null, 2)}
-      `.trim();
-    });
-    
-    const metadata = events.map(event => ({
-      eventId: event.id || event.eventId,
-      eventType: event.type,
-      eventName: event.name,
-      timestamp: event.timestamp
-    }));
-    
-    // Add documents to vector store
-    await vectorStore.addDocuments(
-      eventTexts.map((text, i) => ({
-        pageContent: text,
-        metadata: metadata[i]
-      }))
+        `.trim();
+      });
+
+      const metadata = batch.map((event) => ({
+        eventId: event.id || event.eventId,
+        eventType: event.type,
+        eventName: event.name,
+        timestamp: event.timestamp,
+      }));
+
+      // Add batch to vector store (embeddings created here)
+      await vectorStore.addDocuments(
+        eventTexts.map((text, idx) => ({
+          pageContent: text,
+          metadata: metadata[idx],
+        }))
+      );
+
+      // Progress logging for large batches
+      if (events.length > batchSize) {
+        const processed = Math.min(i + batchSize, events.length);
+        console.log(`   📦 Processed ${processed}/${events.length} events`);
+      }
+    }
+
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+    console.log(
+      `   ✅ Added ${events.length} events to vector store in ${duration}s`
     );
-    
-    console.log(`   ✅ Added ${events.length} events to vector store`);
-    
   } catch (error) {
-    console.error('❌ Failed to add events to vector store:', error);
+    console.error("❌ Failed to add events to vector store:", error);
     throw error;
   }
 }

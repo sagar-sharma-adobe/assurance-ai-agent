@@ -2,76 +2,190 @@
  * Events Routes
  * Endpoints for uploading and managing Assurance session events
  * 
+ * ARCHITECTURE: Chunked Upload for High-Volume Event Processing
+ * - Clients should upload events in chunks of 100 for optimal performance
+ * - Server processes each chunk synchronously (with batch embedding optimization)
+ * - Supports progress tracking via chunk metadata
+ * 
  * INTEGRATION POINT: Team working on event analysis should implement these endpoints
  */
 
 import express from 'express';
 import sessionManager from '../services/sessionManager.js';
 import { searchEvents } from '../services/eventVectorStore.js';
+import {
+  MAX_EVENTS_PER_REQUEST,
+  EVENT_UPLOAD_CHUNK_SIZE,
+} from "../config/constants.js";
 
 const router = express.Router();
 
 /**
+ * GET /api/events/config
+ * Get upload configuration for client implementation
+ * 
+ * Returns recommended settings for chunked uploads
+ * NOTE: This route must be defined BEFORE parameterized routes like /:sessionId
+ */
+router.get('/config', async (req, res) => {
+  const { EVENT_UPLOAD_CHUNK_SIZE, MAX_EVENTS_PER_REQUEST, EMBEDDING_BATCH_SIZE } = await import('../config/constants.js');
+  
+  res.json({
+    success: true,
+    config: {
+      recommendedChunkSize: EVENT_UPLOAD_CHUNK_SIZE,
+      maxEventsPerRequest: MAX_EVENTS_PER_REQUEST,
+      embeddingBatchSize: EMBEDDING_BATCH_SIZE,
+    },
+    usage: {
+      description: 'For optimal performance, split large event batches into chunks',
+      example: `For 1500 events, split into ${Math.ceil(1500 / EVENT_UPLOAD_CHUNK_SIZE)} chunks of ${EVENT_UPLOAD_CHUNK_SIZE} events each`,
+    },
+  });
+});
+
+/**
  * POST /api/events/upload
- * Upload Assurance events to a session
+ * Upload Assurance events to a session with chunked upload support
+ * 
+ * CHUNKED UPLOAD ARCHITECTURE:
+ * For large event batches (500-1500 events), client should split into chunks:
+ * - Recommended chunk size: 100 events
+ * - Maximum per request: 200 events (enforced)
+ * - Upload chunks sequentially for progress tracking
  * 
  * INTEGRATION POINT: Team should implement event validation and parsing here
  * 
  * Body: { 
  *   sessionId: string, 
- *   events: Array<AssuranceEvent>
+ *   events: Array<AssuranceEvent>,
+ *   chunkInfo?: {
+ *     current: number,    // Current chunk number (1-based)
+ *     total: number,      // Total number of chunks
+ *     isLast: boolean     // Is this the last chunk?
+ *   }
  * }
+ * 
+ * Response includes chunk progress for client-side progress tracking
  */
 router.post('/upload', async (req, res) => {
-  const { sessionId, events } = req.body;
+  const { sessionId, events, chunkInfo } = req.body;
 
-  // Validation
+  // Import configuration
+  const { MAX_EVENTS_PER_REQUEST, EVENT_UPLOAD_CHUNK_SIZE } = await import(
+    "../config/constants.js"
+  );
+
+  // Validation: sessionId
   if (!sessionId) {
     return res.status(400).json({
       success: false,
-      error: 'sessionId is required',
+      error: "sessionId is required",
     });
   }
 
+  // Validation: events array
   if (!events || !Array.isArray(events)) {
     return res.status(400).json({
       success: false,
-      error: 'events array is required',
+      error: "events array is required",
     });
   }
 
+  // Validation: request size limit
+  if (events.length === 0) {
+    return res.status(400).json({
+      success: false,
+      error: "events array cannot be empty",
+    });
+  }
+
+  if (events.length > MAX_EVENTS_PER_REQUEST) {
+    return res.status(413).json({
+      success: false,
+      error: `Too many events in single request. Maximum: ${MAX_EVENTS_PER_REQUEST} events.`,
+      hint: `Split into chunks of ${EVENT_UPLOAD_CHUNK_SIZE} events. Received: ${events.length}`,
+      received: events.length,
+      maxAllowed: MAX_EVENTS_PER_REQUEST,
+      recommendedChunkSize: EVENT_UPLOAD_CHUNK_SIZE,
+    });
+  }
+
+  // Validation: session exists
   const session = sessionManager.getSession(sessionId);
   if (!session) {
     return res.status(404).json({
       success: false,
-      error: 'Session not found',
+      error: "Session not found",
     });
   }
 
   try {
+    const startTime = Date.now();
+
+    // Log chunk progress if provided
+    if (chunkInfo) {
+      console.log(
+        `📊 [${sessionId.substring(0, 8)}] Processing chunk ${
+          chunkInfo.current
+        }/${chunkInfo.total} (${events.length} events)`
+      );
+    } else {
+      console.log(
+        `📊 [${sessionId.substring(0, 8)}] Processing ${events.length} events`
+      );
+    }
+
     // TODO: Team to implement
     // - Validate event structure
     // - Parse event types
     // - Extract relevant fields
     // - Add any preprocessing
-    
-    // Add events to session (stores raw + creates embeddings)
+    // - Event deduplication (if needed)
+
+    // Add events to session (stores raw + creates embeddings in batches)
     await sessionManager.addEvents(sessionId, events);
 
-    console.log(`📊 [${sessionId.substring(0, 8)}] Uploaded ${events.length} events`);
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+    const totalEvents = session.events.length;
 
-    res.json({
+    console.log(
+      `✅ [${sessionId.substring(0, 8)}] Processed ${
+        events.length
+      } events in ${duration}s (total: ${totalEvents})`
+    );
+
+    // Response with chunk progress info
+    const response = {
       success: true,
       message: `${events.length} events uploaded successfully`,
       sessionId,
-      totalEvents: session.events.length,
-    });
-    
+      processed: events.length,
+      totalEventsInSession: totalEvents,
+      processingTime: parseFloat(duration),
+    };
+
+    // Include chunk info in response if provided
+    if (chunkInfo) {
+      response.chunkInfo = {
+        current: chunkInfo.current,
+        total: chunkInfo.total,
+        isLast: chunkInfo.isLast,
+        progress: Math.round((chunkInfo.current / chunkInfo.total) * 100),
+      };
+    }
+
+    res.json(response);
   } catch (error) {
-    console.error('❌ Error uploading events:', error);
+    console.error(
+      `❌ [${sessionId.substring(0, 8)}] Error uploading events:`,
+      error
+    );
     res.status(500).json({
       success: false,
       error: error.message,
+      sessionId,
+      chunkInfo: chunkInfo || null,
     });
   }
 });
