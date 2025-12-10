@@ -56,6 +56,8 @@ temp/
 sessions/
 data/
 
-# ChromaDB data (if we add it later)
-chroma_db/vector_store/
-knowledge_base/
+# Vector store and knowledge base
+# Note: vector_store/ is currently tracked in git for PoC convenience
+# To untrack when size grows: git rm --cached -r vector_store/
+# vector_store/  # Uncomment to stop tracking new changes
+knowledge_base/uploads/  # User-uploaded files (PDFs, etc.)

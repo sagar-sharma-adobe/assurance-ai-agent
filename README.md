@@ -63,6 +63,28 @@ npm start
 
 ---
 
+## 📚 Pre-loaded Knowledge Base
+
+This repository includes a pre-loaded document for testing:
+- **Adobe Assurance Overview** (7 chunks, 5,408 characters)
+- Ready to use immediately after `npm start`
+- Add more documents or start fresh by deleting `vector_store/`
+
+**Note:** The vector store is committed to git for team convenience during PoC phase.
+
+**Size Monitoring:**
+```bash
+# Check current knowledge base size
+du -sh vector_store/
+
+# List all loaded documents
+curl http://localhost:3001/api/knowledge/documents
+
+# Consider moving to .gitignore when size exceeds ~10MB
+```
+
+---
+
 ## 🚀 Core Features
 
 ### 1. **RAG-Enabled Chat**
