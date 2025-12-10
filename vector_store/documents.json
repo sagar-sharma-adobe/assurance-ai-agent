@@ -9,6 +9,18 @@
       "chunkCount": 7,
       "contentLength": 5408,
       "status": "loaded"
+    },
+    {
+      "id": "acdadccb-869d-4c0b-beb0-f3a2cf843234",
+      "type": "url",
+      "title": "Adobe Assurance Overview",
+      "url": "https://developer.adobe.com/client-sdks/home/base/assurance/",
+      "loadedAt": "2025-12-10T17:41:36.914Z",
+      "chunkCount": 14,
+      "contentLength": 10637,
+      "status": "updated",
+      "contentHash": "1886c4a5b163da6215cbd3f98fd0139cf95d0fbcd888bad3c909636281fab285",
+      "updatedAt": "2025-12-10T17:46:11.703Z"
     }
   ]
 }

@@ -1,61 +1,57 @@
 /**
  * Vector Store Service
- * Handles document embeddings storage and retrieval using HNSWLib
+ * Handles document embeddings storage and retrieval using ChromaDB
+ * 
+ * KEY IMPROVEMENT: ChromaDB supports full CRUD operations including deletion,
+ * which enables proper document updates when content changes.
  */
 
-import { HNSWLib } from '@langchain/community/vectorstores/hnswlib';
-import fs from 'fs';
-import path from 'path';
+import { Chroma } from "@langchain/community/vectorstores/chroma";
+import { ChromaClient } from "chromadb";
+import fs from "fs";
 import { embeddings } from '../config/ollama.js';
-import { VECTOR_STORE_PATH, DOCS_METADATA_FILE, UPLOAD_DIR } from '../config/constants.js';
+import {
+  CHROMA_URL,
+  DOCS_METADATA_FILE,
+  UPLOAD_DIR,
+} from "../config/constants.js";
 
-// Global variable to hold the vector store instance
+// Global variables
 let vectorStore = null;
+let chromaClient = null;
+const COLLECTION_NAME = "assurance_knowledge_base";
 
 /**
- * Initialize vector store on server startup
- * Loads existing store from disk or creates a new empty one
+ * Initialize ChromaDB vector store on server startup
  * 
- * Why a function? Vector store initialization is a one-time operation
  * @returns {Promise<void>}
  */
 export async function initializeVectorStore() {
   try {
-    console.log('🔧 Initializing Vector Store...');
+    console.log("🔧 Initializing ChromaDB Vector Store...");
 
-    // Create directories if they don't exist
-    if (!fs.existsSync(VECTOR_STORE_PATH)) {
-      fs.mkdirSync(VECTOR_STORE_PATH, { recursive: true });
-      console.log('   📁 Created vector_store directory');
-    }
-
+    // Create upload directory if it doesn't exist
     if (!fs.existsSync(UPLOAD_DIR)) {
       fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-      console.log('   📁 Created knowledge_base/uploads directory');
+      console.log("   📁 Created knowledge_base/uploads directory");
     }
 
-    // Try to load existing vector store from disk
-    const vectorStorePath = path.join(VECTOR_STORE_PATH, 'docstore');
+    // Initialize ChromaDB client
+    chromaClient = new ChromaClient({
+      path: CHROMA_URL,
+    });
 
-    if (fs.existsSync(vectorStorePath)) {
-      try {
-        vectorStore = await HNSWLib.load(vectorStorePath, embeddings);
-        console.log('   ✅ Loaded existing vector store');
-      } catch (error) {
-        console.log('   ⚠️  Could not load existing store, creating new one');
-        vectorStore = null;
-      }
-    }
+    // Test connection
+    await chromaClient.heartbeat();
+    console.log("   ✅ Connected to ChromaDB server");
 
-    // If no existing store, create empty one
-    if (!vectorStore) {
-      vectorStore = await HNSWLib.fromTexts(
-        ['Initialization document - this will be replaced when you load real documents'],
-        [{ source: 'init' }],
-        embeddings
-      );
-      console.log('   ✅ Created new empty vector store');
-    }
+    // Initialize LangChain Chroma vector store
+    vectorStore = await Chroma.fromExistingCollection(embeddings, {
+      collectionName: COLLECTION_NAME,
+      url: CHROMA_URL,
+    });
+
+    console.log(`   ✅ Using collection: ${COLLECTION_NAME}`);
 
     // Initialize metadata file if it doesn't exist
     if (!fs.existsSync(DOCS_METADATA_FILE)) {
@@ -63,39 +59,52 @@ export async function initializeVectorStore() {
         DOCS_METADATA_FILE,
         JSON.stringify({ documents: [] }, null, 2)
       );
-      console.log('   📄 Created documents metadata file');
+      console.log("   📄 Created documents metadata file");
     }
 
-    console.log('   ✨ Knowledge base ready!\n');
+    console.log("   ✨ Knowledge base ready!\n");
   } catch (error) {
-    console.error('❌ Failed to initialize vector store:', error);
+    console.error("❌ Failed to initialize ChromaDB vector store:", error);
+    console.error(
+      "   💡 Make sure ChromaDB is running: docker ps | grep chromadb"
+    );
     throw error;
   }
 }
 
 /**
  * Get the current vector store instance
- * @returns {HNSWLib|null} Vector store instance or null if not initialized
+ * @returns {Chroma} Vector store instance
  */
 export function getVectorStore() {
   if (!vectorStore) {
-    throw new Error('Vector store not initialized. Call initializeVectorStore() first.');
+    throw new Error(
+      "Vector store not initialized. Call initializeVectorStore() first."
+    );
   }
   return vectorStore;
 }
 
 /**
- * Save vector store to disk
+ * Get the ChromaDB client
+ * @returns {ChromaClient} ChromaDB client instance
+ */
+export function getChromaClient() {
+  if (!chromaClient) {
+    throw new Error("ChromaDB client not initialized.");
+  }
+  return chromaClient;
+}
+
+/**
+ * Save vector store to disk (No-op for ChromaDB - auto-persists)
+ * Kept for API compatibility
  * @returns {Promise<void>}
  */
 export async function saveVectorStore() {
-  if (!vectorStore) {
-    throw new Error('Vector store not initialized');
-  }
-
-  const vectorStorePath = path.join(VECTOR_STORE_PATH, 'docstore');
-  await vectorStore.save(vectorStorePath);
-  console.log('💾 Vector store saved to disk');
+  // ChromaDB auto-persists, no explicit save needed
+  // Keeping this function for backward compatibility
+  return Promise.resolve();
 }
 
 /**
@@ -111,6 +120,61 @@ export async function searchSimilarDocuments(query, k = 4) {
 
   const results = await vectorStore.similaritySearch(query, k);
   return results;
+}
+
+/**
+ * Delete documents by URL from vector store
+ * This is the KEY feature that HNSWLib didn't support!
+ * 
+ * @param {string} url - URL of document to delete
+ * @returns {Promise<number>} Number of documents deleted
+ */
+export async function deleteDocumentsByUrl(url) {
+  if (!chromaClient) {
+    throw new Error('ChromaDB client not initialized');
+  }
+
+  try {
+    const collection = await chromaClient.getCollection({ name: COLLECTION_NAME });
+    
+    // Delete all chunks with this URL in metadata
+    const deleteResult = await collection.delete({
+      where: { url: url }
+    });
+
+    console.log(`🗑️  Deleted chunks for URL: ${url}`);
+    return deleteResult || 0;
+  } catch (error) {
+    console.error(`❌ Error deleting documents for URL ${url}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Delete documents by document ID from vector store
+ * 
+ * @param {string} docId - Document ID to delete
+ * @returns {Promise<number>} Number of documents deleted
+ */
+export async function deleteDocumentById(docId) {
+  if (!chromaClient) {
+    throw new Error('ChromaDB client not initialized');
+  }
+
+  try {
+    const collection = await chromaClient.getCollection({ name: COLLECTION_NAME });
+    
+    // Delete all chunks with this document ID in metadata
+    const deleteResult = await collection.delete({
+      where: { documentId: docId }
+    });
+
+    console.log(`🗑️  Deleted chunks for document ID: ${docId}`);
+    return deleteResult || 0;
+  } catch (error) {
+    console.error(`❌ Error deleting document ${docId}:`, error);
+    throw error;
+  }
 }
 
 /**
@@ -153,3 +217,65 @@ export function addDocumentMetadata(metadata) {
   }
 }
 
+/**
+ * Update document metadata in tracking file
+ * @param {string} docId - Document ID to update
+ * @param {Object} updates - Fields to update
+ */
+export function updateDocumentMetadata(docId, updates) {
+  try {
+    const documents = getLoadedDocumentsMetadata();
+    const docIndex = documents.findIndex(doc => doc.id === docId);
+    
+    if (docIndex === -1) {
+      throw new Error(`Document ${docId} not found in metadata`);
+    }
+    
+    // Merge updates
+    documents[docIndex] = {
+      ...documents[docIndex],
+      ...updates,
+    };
+    
+    fs.writeFileSync(
+      DOCS_METADATA_FILE,
+      JSON.stringify({ documents }, null, 2)
+    );
+    
+    console.log(`📝 Updated document metadata: ${documents[docIndex].title}`);
+  } catch (error) {
+    console.error('❌ Error updating document metadata:', error);
+    throw error;
+  }
+}
+
+/**
+ * Delete document metadata from tracking file
+ * @param {string} docId - Document ID to delete
+ */
+export function deleteDocumentMetadata(docId) {
+  try {
+    const documents = getLoadedDocumentsMetadata();
+    const filteredDocs = documents.filter(doc => doc.id !== docId);
+    
+    fs.writeFileSync(
+      DOCS_METADATA_FILE,
+      JSON.stringify({ documents: filteredDocs }, null, 2)
+    );
+    
+    console.log(`📝 Deleted document metadata: ${docId}`);
+  } catch (error) {
+    console.error('❌ Error deleting document metadata:', error);
+    throw error;
+  }
+}
+
+/**
+ * Find document by URL in metadata
+ * @param {string} url - URL to search for
+ * @returns {Object|null} Document metadata or null
+ */
+export function findDocumentByUrl(url) {
+  const documents = getLoadedDocumentsMetadata();
+  return documents.find(doc => doc.url === url) || null;
+}

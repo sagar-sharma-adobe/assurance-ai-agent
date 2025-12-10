@@ -265,6 +265,7 @@ export async function loadDocument(source, options = {}) {
     source: document.metadata.source,
     type: document.metadata.type,
     metadata: document.metadata,
+    content: document.content, // Raw content for hashing/deduplication
     chunks,
     chunkCount: chunks.length,
     contentLength: document.content.length,

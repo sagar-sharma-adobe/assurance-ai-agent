@@ -13,17 +13,30 @@
 import express from 'express';
 import multer from 'multer';
 import path from 'path';
-import { loadDocument, loadDocuments } from '../services/documentLoader.js';
-import { 
-  getVectorStore, 
-  getLoadedDocumentsMetadata, 
+import crypto from "crypto";
+import { loadDocument, loadDocuments } from "../services/documentLoader.js";
+import {
+  getVectorStore,
+  getLoadedDocumentsMetadata,
   addDocumentMetadata,
-  saveVectorStore 
-} from '../services/vectorStore.js';
-import { UPLOAD_DIR } from '../config/constants.js';
-import fs from 'fs';
+  saveVectorStore,
+  findDocumentByUrl,
+  deleteDocumentsByUrl,
+  updateDocumentMetadata,
+} from "../services/vectorStore.js";
+import { UPLOAD_DIR } from "../config/constants.js";
+import fs from "fs";
 
 const router = express.Router();
+
+/**
+ * Generate content hash for deduplication
+ * @param {string} content - Document content
+ * @returns {string} SHA-256 hash
+ */
+function generateContentHash(content) {
+  return crypto.createHash("sha256").update(content).digest("hex");
+}
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -34,8 +47,11 @@ const storage = multer.diskStorage({
     cb(null, UPLOAD_DIR);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(
+      null,
+      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)
+    );
   },
 });
 
@@ -45,13 +61,15 @@ const upload = multer({
     fileSize: 10 * 1024 * 1024, // 10MB limit
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['.pdf', '.txt', '.md'];
+    const allowedTypes = [".pdf", ".txt", ".md"];
     const ext = path.extname(file.originalname).toLowerCase();
-    
+
     if (allowedTypes.includes(ext)) {
       cb(null, true);
     } else {
-      cb(new Error(`Unsupported file type. Allowed: ${allowedTypes.join(', ')}`));
+      cb(
+        new Error(`Unsupported file type. Allowed: ${allowedTypes.join(", ")}`)
+      );
     }
   },
 });
@@ -60,17 +78,17 @@ const upload = multer({
  * GET /api/knowledge/documents
  * List all loaded documents in the knowledge base
  */
-router.get('/documents', (req, res) => {
+router.get("/documents", (req, res) => {
   try {
     const documents = getLoadedDocumentsMetadata();
-    
+
     res.json({
       success: true,
       documents,
       total: documents.length,
     });
   } catch (error) {
-    console.error('❌ Error listing documents:', error);
+    console.error("❌ Error listing documents:", error);
     res.status(500).json({
       success: false,
       error: error.message,
@@ -80,22 +98,28 @@ router.get('/documents', (req, res) => {
 
 /**
  * POST /api/knowledge/load-url
- * Load a document from a URL
- * 
+ * Load or update a document from a URL
+ *
+ * Features:
+ * - URL-based deduplication (checks if URL already loaded)
+ * - Content-hash comparison (detects if content changed)
+ * - Automatic update (replaces old chunks with new ones)
+ *
  * Body: {
  *   url: string,
  *   title?: string,
  *   chunkSize?: number,
- *   chunkOverlap?: number
+ *   chunkOverlap?: number,
+ *   forceUpdate?: boolean  // Force update even if content hash matches
  * }
  */
-router.post('/load-url', async (req, res) => {
-  const { url, title, chunkSize, chunkOverlap } = req.body;
+router.post("/load-url", async (req, res) => {
+  const { url, title, chunkSize, chunkOverlap, forceUpdate = false } = req.body;
 
   if (!url) {
     return res.status(400).json({
       success: false,
-      error: 'url is required',
+      error: "url is required",
     });
   }
 
@@ -104,7 +128,7 @@ router.post('/load-url', async (req, res) => {
 
     // Load and chunk document
     const document = await loadDocument(
-      { type: 'url', url },
+      { type: "url", url },
       { chunkSize, chunkOverlap }
     );
 
@@ -114,30 +138,118 @@ router.post('/load-url', async (req, res) => {
       document.metadata.title = title;
     }
 
+    // Generate content hash for deduplication
+    const contentHash = generateContentHash(document.content);
+
+    // Check if URL already exists
+    const existingDoc = findDocumentByUrl(url);
+
+    if (existingDoc) {
+      // URL exists - check if content changed
+      if (
+        !forceUpdate &&
+        existingDoc.contentHash &&
+        existingDoc.contentHash === contentHash
+      ) {
+        console.log(`ℹ️  Document unchanged: ${document.title}`);
+        return res.json({
+          success: true,
+          message: "Document unchanged (no update needed)",
+          action: "skipped",
+          document: {
+            id: existingDoc.id,
+            title: existingDoc.title,
+            source: url,
+            chunkCount: existingDoc.chunkCount,
+            contentLength: existingDoc.contentLength,
+            loadedAt: existingDoc.loadedAt,
+          },
+        });
+      }
+
+      // Content changed or no hash exists (legacy document) - update document
+      console.log(`🔄 Updating document: ${document.title}`);
+      if (existingDoc.contentHash) {
+        console.log(
+          `   Old hash: ${existingDoc.contentHash.substring(0, 12)}...`
+        );
+      } else {
+        console.log(`   Old hash: N/A (legacy document)`);
+      }
+      console.log(`   New hash: ${contentHash.substring(0, 12)}...`);
+
+      // Delete old chunks from vector store
+      await deleteDocumentsByUrl(url);
+
+      // Add new chunks
+      const vectorStore = getVectorStore();
+      await vectorStore.addDocuments(document.chunks);
+
+      // Update metadata
+      updateDocumentMetadata(existingDoc.id, {
+        title: document.title,
+        contentHash,
+        chunkCount: document.chunkCount,
+        contentLength: document.contentLength,
+        updatedAt: new Date().toISOString(),
+        status: "updated",
+      });
+
+      console.log(
+        `✅ Document updated: ${document.title} (${document.chunkCount} chunks)`
+      );
+
+      return res.json({
+        success: true,
+        message: "Document updated (content changed)",
+        action: "updated",
+        document: {
+          id: existingDoc.id,
+          title: document.title,
+          source: url,
+          chunkCount: document.chunkCount,
+          contentLength: document.contentLength,
+          updatedAt: new Date().toISOString(),
+        },
+        changes: {
+          oldHash: existingDoc.contentHash
+            ? existingDoc.contentHash.substring(0, 12)
+            : "N/A",
+          newHash: contentHash.substring(0, 12),
+          oldChunks: existingDoc.chunkCount,
+          newChunks: document.chunkCount,
+        },
+      });
+    }
+
+    // New URL - load fresh
+    console.log(`✨ New document: ${document.title}`);
+
     // Add to vector store
     const vectorStore = getVectorStore();
     await vectorStore.addDocuments(document.chunks);
 
-    // Save vector store to disk
-    await saveVectorStore();
-
     // Track document metadata
     addDocumentMetadata({
       id: document.id,
-      type: 'url',
+      type: "url",
       title: document.title,
       url,
+      contentHash,
       loadedAt: new Date().toISOString(),
       chunkCount: document.chunkCount,
       contentLength: document.contentLength,
-      status: 'loaded',
+      status: "loaded",
     });
 
-    console.log(`✅ Document loaded: ${document.title} (${document.chunkCount} chunks)`);
+    console.log(
+      `✅ Document loaded: ${document.title} (${document.chunkCount} chunks)`
+    );
 
     res.json({
       success: true,
-      message: 'Document loaded successfully',
+      message: "Document loaded successfully",
+      action: "created",
       document: {
         id: document.id,
         title: document.title,
@@ -146,9 +258,8 @@ router.post('/load-url', async (req, res) => {
         contentLength: document.contentLength,
       },
     });
-
   } catch (error) {
-    console.error('❌ Error loading URL:', error);
+    console.error("❌ Error loading URL:", error);
     res.status(500).json({
       success: false,
       error: error.message,
