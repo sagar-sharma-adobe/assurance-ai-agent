@@ -1,0 +1,46 @@
+{
+  "description": "Adobe Experience Platform documentation URLs for knowledge base",
+  "categories": {
+    "assurance": [
+      "https://developer.adobe.com/client-sdks/home/base/assurance/",
+      "https://developer.adobe.com/client-sdks/documentation/platform-assurance/",
+      "https://developer.adobe.com/client-sdks/documentation/platform-assurance/api-reference/"
+    ],
+    "edge_network": [
+      "https://developer.adobe.com/client-sdks/documentation/edge-network/",
+      "https://developer.adobe.com/client-sdks/documentation/edge-network/api-reference/",
+      "https://experienceleague.adobe.com/docs/experience-platform/edge/fundamentals/overview.html"
+    ],
+    "core_sdks": [
+      "https://developer.adobe.com/client-sdks/documentation/mobile-core/",
+      "https://developer.adobe.com/client-sdks/documentation/mobile-core/api-reference/",
+      "https://developer.adobe.com/client-sdks/documentation/lifecycle/",
+      "https://developer.adobe.com/client-sdks/documentation/lifecycle/api-reference/"
+    ],
+    "analytics": [
+      "https://developer.adobe.com/client-sdks/documentation/adobe-analytics/",
+      "https://developer.adobe.com/client-sdks/documentation/adobe-analytics/api-reference/"
+    ],
+    "messaging": [
+      "https://developer.adobe.com/client-sdks/documentation/adobe-journey-optimizer/",
+      "https://developer.adobe.com/client-sdks/documentation/adobe-journey-optimizer/api-reference/"
+    ],
+    "optimize": [
+      "https://developer.adobe.com/client-sdks/documentation/adobe-journey-optimizer-decisioning/",
+      "https://developer.adobe.com/client-sdks/documentation/adobe-target/"
+    ],
+    "identity": [
+      "https://developer.adobe.com/client-sdks/documentation/identity-for-edge-network/",
+      "https://developer.adobe.com/client-sdks/documentation/identity-for-edge-network/api-reference/"
+    ],
+    "consent": [
+      "https://developer.adobe.com/client-sdks/documentation/consent-for-edge-network/"
+    ],
+    "getting_started": [
+      "https://developer.adobe.com/client-sdks/documentation/getting-started/",
+      "https://developer.adobe.com/client-sdks/documentation/current-sdk-versions/"
+    ]
+  },
+  "total_urls": 21
+}
+

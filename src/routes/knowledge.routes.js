@@ -24,6 +24,7 @@ import {
   deleteDocumentsByUrl,
   updateDocumentMetadata,
 } from "../services/vectorStore.js";
+import { crawlWebsite, filterUrls } from "../services/webCrawler.js";
 import { UPLOAD_DIR } from "../config/constants.js";
 import fs from "fs";
 
@@ -270,10 +271,10 @@ router.post("/load-url", async (req, res) => {
 /**
  * POST /api/knowledge/upload
  * Upload and load a document file (PDF, TXT, MD)
- * 
+ *
  * Multipart form data with 'document' field
  */
-router.post('/upload', upload.single('document'), async (req, res) => {
+router.post("/upload", upload.single("document"), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({
       success: false,
@@ -288,15 +289,15 @@ router.post('/upload', upload.single('document'), async (req, res) => {
     console.log(`📥 Processing uploaded file: ${originalname}`);
 
     // Determine document type
-    let documentType = 'text';
-    if (ext === '.pdf') documentType = 'pdf';
-    else if (ext === '.md') documentType = 'markdown';
+    let documentType = "text";
+    if (ext === ".pdf") documentType = "pdf";
+    else if (ext === ".md") documentType = "markdown";
 
     // Load and chunk document
     const document = await loadDocument(
-      { 
-        type: documentType === 'pdf' ? 'pdf' : 'file',
-        data: documentType === 'pdf' ? filePath : filePath,
+      {
+        type: documentType === "pdf" ? "pdf" : "file",
+        data: documentType === "pdf" ? filePath : filePath,
         fileName: originalname,
       },
       {
@@ -323,14 +324,16 @@ router.post('/upload', upload.single('document'), async (req, res) => {
       loadedAt: new Date().toISOString(),
       chunkCount: document.chunkCount,
       contentLength: document.contentLength,
-      status: 'loaded',
+      status: "loaded",
     });
 
-    console.log(`✅ File loaded: ${document.title} (${document.chunkCount} chunks)`);
+    console.log(
+      `✅ File loaded: ${document.title} (${document.chunkCount} chunks)`
+    );
 
     res.json({
       success: true,
-      message: 'File uploaded and loaded successfully',
+      message: "File uploaded and loaded successfully",
       document: {
         id: document.id,
         title: document.title,
@@ -341,10 +344,9 @@ router.post('/upload', upload.single('document'), async (req, res) => {
         fileSize: size,
       },
     });
-
   } catch (error) {
-    console.error('❌ Error uploading file:', error);
-    
+    console.error("❌ Error uploading file:", error);
+
     // Clean up uploaded file on error
     if (req.file) {
       fs.unlink(req.file.path, () => {});
@@ -360,50 +362,52 @@ router.post('/upload', upload.single('document'), async (req, res) => {
 /**
  * POST /api/knowledge/load-batch
  * Load multiple documents from URLs in batch
- * 
+ *
  * Body: {
  *   urls: string[],
  *   chunkSize?: number,
  *   chunkOverlap?: number
  * }
  */
-router.post('/load-batch', async (req, res) => {
+router.post("/load-batch", async (req, res) => {
   const { urls, chunkSize, chunkOverlap } = req.body;
 
   if (!urls || !Array.isArray(urls) || urls.length === 0) {
     return res.status(400).json({
       success: false,
-      error: 'urls array is required and must not be empty',
+      error: "urls array is required and must not be empty",
     });
   }
 
   try {
     console.log(`📥 Batch loading ${urls.length} documents...`);
 
-    const sources = urls.map(url => ({ type: 'url', url }));
+    const sources = urls.map((url) => ({ type: "url", url }));
     const result = await loadDocuments(sources, { chunkSize, chunkOverlap });
 
     // Add successful documents to vector store
     const vectorStore = getVectorStore();
     for (const doc of result.documents) {
       await vectorStore.addDocuments(doc.chunks);
-      
+
       addDocumentMetadata({
         id: doc.id,
-        type: 'url',
+        type: "url",
         title: doc.title,
         url: doc.source,
         loadedAt: new Date().toISOString(),
         chunkCount: doc.chunkCount,
         contentLength: doc.contentLength,
-        status: 'loaded',
+        status: "loaded",
       });
     }
 
     // Save vector store
     await saveVectorStore();
 
-    console.log(`✅ Batch load complete: ${result.successCount}/${urls.length} successful`);
+    console.log(
+      `✅ Batch load complete: ${result.successCount}/${urls.length} successful`
+    );
 
     res.json({
       success: true,
@@ -411,7 +415,7 @@ router.post('/load-batch', async (req, res) => {
       results: {
         successCount: result.successCount,
         errorCount: result.errorCount,
-        documents: result.documents.map(d => ({
+        documents: result.documents.map((d) => ({
           id: d.id,
           title: d.title,
           source: d.source,
@@ -420,9 +424,8 @@ router.post('/load-batch', async (req, res) => {
         errors: result.errors,
       },
     });
-
   } catch (error) {
-    console.error('❌ Error batch loading:', error);
+    console.error("❌ Error batch loading:", error);
     res.status(500).json({
       success: false,
       error: error.message,
@@ -433,19 +436,19 @@ router.post('/load-batch', async (req, res) => {
 /**
  * POST /api/knowledge/search
  * Search the knowledge base
- * 
+ *
  * Body: {
  *   query: string,
  *   limit?: number (default: 5)
  * }
  */
-router.post('/search', async (req, res) => {
+router.post("/search", async (req, res) => {
   const { query, limit = 5 } = req.body;
 
   if (!query) {
     return res.status(400).json({
       success: false,
-      error: 'query is required',
+      error: "query is required",
     });
   }
 
@@ -456,15 +459,138 @@ router.post('/search', async (req, res) => {
     res.json({
       success: true,
       query,
-      results: results.map(doc => ({
+      results: results.map((doc) => ({
         content: doc.pageContent,
         metadata: doc.metadata,
       })),
       totalResults: results.length,
     });
-
   } catch (error) {
-    console.error('❌ Error searching knowledge base:', error);
+    console.error("❌ Error searching knowledge base:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/knowledge/crawl
+ * Crawl a website and load discovered documentation pages
+ *
+ * Body: {
+ *   startUrl: string,
+ *   maxDepth?: number (default: 2),
+ *   maxPages?: number (default: 30),
+ *   sameDomain?: boolean (default: true),
+ *   includePatterns?: string[] (optional URL filters),
+ *   excludePatterns?: string[] (optional URL exclusions),
+ *   autoLoad?: boolean (default: true, load discovered URLs)
+ * }
+ */
+router.post("/crawl", async (req, res) => {
+  const {
+    startUrl,
+    maxDepth = 2,
+    maxPages = 30,
+    sameDomain = true,
+    includePatterns = [],
+    excludePatterns = [],
+    autoLoad = true,
+  } = req.body;
+
+  if (!startUrl) {
+    return res.status(400).json({
+      success: false,
+      error: "startUrl is required",
+    });
+  }
+
+  try {
+    console.log(`\n🕷️  Starting web crawl: ${startUrl}`);
+
+    // Get already loaded URLs to skip
+    const loadedDocs = getLoadedDocumentsMetadata();
+    const loadedUrls = new Set(loadedDocs.map((doc) => doc.url));
+
+    // Crawl website
+    const crawlResult = await crawlWebsite(startUrl, {
+      maxDepth,
+      maxPages,
+      sameDomain,
+      skipLoaded: true,
+      loadedUrls,
+    });
+
+    // Filter URLs if patterns provided
+    let urlsToLoad = crawlResult.crawled;
+    if (includePatterns.length > 0 || excludePatterns.length > 0) {
+      urlsToLoad = filterUrls(urlsToLoad, {
+        includePatterns,
+        excludePatterns,
+      });
+      console.log(
+        `   🔍 Filtered: ${urlsToLoad.length}/${crawlResult.crawled.length} URLs match patterns`
+      );
+    }
+
+    // Load documents if autoLoad is true
+    let loadResult = null;
+    if (autoLoad && urlsToLoad.length > 0) {
+      console.log(`\n📚 Loading ${urlsToLoad.length} discovered documents...`);
+
+      const sources = urlsToLoad.map((url) => ({ type: "url", url }));
+      loadResult = await loadDocuments(sources);
+
+      // Add successful documents to vector store
+      const vectorStore = getVectorStore();
+      for (const doc of loadResult.documents) {
+        await vectorStore.addDocuments(doc.chunks);
+
+        addDocumentMetadata({
+          id: doc.id,
+          type: "url",
+          title: doc.title,
+          url: doc.source,
+          loadedAt: new Date().toISOString(),
+          chunkCount: doc.chunkCount,
+          contentLength: doc.contentLength,
+          status: "loaded",
+          crawledFrom: startUrl, // Track crawl source
+        });
+      }
+
+      console.log(
+        `✅ Crawl & load complete: ${loadResult.successCount}/${urlsToLoad.length} loaded`
+      );
+    }
+
+    res.json({
+      success: true,
+      message: autoLoad
+        ? `Crawled and loaded ${loadResult?.successCount || 0}/${
+            urlsToLoad.length
+          } documents`
+        : `Crawled ${crawlResult.stats.discovered} URLs (autoLoad disabled)`,
+      crawl: {
+        startUrl,
+        discovered: crawlResult.stats.discovered,
+        crawled: crawlResult.stats.crawled,
+        failed: crawlResult.stats.failed,
+        skipped: crawlResult.stats.skipped,
+      },
+      load: autoLoad
+        ? {
+            attempted: urlsToLoad.length,
+            succeeded: loadResult?.successCount || 0,
+            failed: loadResult?.errorCount || 0,
+            errors: loadResult?.errors || [],
+          }
+        : null,
+      urls: autoLoad ? null : urlsToLoad, // Return URLs if not auto-loading
+    });
+  } catch (error) {
+    console.error("❌ Error in web crawl:", error);
     res.status(500).json({
       success: false,
       error: error.message,

@@ -48,6 +48,9 @@ async function startServer() {
        console.log("   POST /api/knowledge/load-url");
        console.log("   POST /api/knowledge/upload");
        console.log("   POST /api/knowledge/load-batch");
+       console.log(
+         "   POST /api/knowledge/crawl             (🕷️  Web Crawler)"
+       );
        console.log("   POST /api/knowledge/search");
        console.log("\n✨ Ready to assist with Adobe Assurance debugging!\n");
     });
