@@ -141,26 +141,49 @@ router.post('/upload', async (req, res) => {
     // - Parse event types
     // - Extract relevant fields
     // - Add any preprocessing
-    // - Event deduplication (if needed)
 
-    // Add events to session (stores raw + creates embeddings in batches)
-    await sessionManager.addEvents(sessionId, events);
+    // Add events to session (with automatic deduplication)
+    const deduplicationStats = await sessionManager.addEvents(
+      sessionId,
+      events
+    );
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
     const totalEvents = session.events.length;
 
+    // Log results
+    if (deduplicationStats.duplicates > 0) {
+      console.log(
+        `⚠️  [${sessionId.substring(0, 8)}] ${
+          deduplicationStats.duplicates
+        } duplicates skipped, ` + `${deduplicationStats.added} new events added`
+      );
+    }
+
     console.log(
       `✅ [${sessionId.substring(0, 8)}] Processed ${
         events.length
-      } events in ${duration}s (total: ${totalEvents})`
+      } events in ${duration}s (${deduplicationStats.added} new, ${
+        deduplicationStats.duplicates
+      } duplicates)`
     );
 
-    // Response with chunk progress info
+    // Build success message
+    let message;
+    if (deduplicationStats.duplicates > 0) {
+      message = `${deduplicationStats.added} new events added, ${deduplicationStats.duplicates} duplicates skipped`;
+    } else {
+      message = `${events.length} events uploaded successfully`;
+    }
+
+    // Response with chunk progress info and deduplication stats
     const response = {
       success: true,
-      message: `${events.length} events uploaded successfully`,
+      message,
       sessionId,
       processed: events.length,
+      added: deduplicationStats.added,
+      duplicates: deduplicationStats.duplicates,
       totalEventsInSession: totalEvents,
       processingTime: parseFloat(duration),
     };

@@ -49,6 +49,7 @@ class SessionManager {
       metadata: metadata,
       conversationHistory: [], // Simple conversation tracking
       events: [], // Raw Assurance events (array storage)
+      eventIds: new Set(), // Track event IDs for deduplication (O(1) lookup)
     };
 
     // Initialize event vector store for this session (LangChain integrated)
@@ -125,12 +126,17 @@ class SessionManager {
   /**
    * Add events to session (stores raw events + creates embeddings)
    *
+   * Features:
+   * - Automatic deduplication using Set (O(1) lookup)
+   * - Tracks added vs duplicate counts
+   * - Idempotent (safe to retry same request)
+   *
    * INTEGRATION POINT: Team working on event analysis should call this
    * to upload Assurance session events
    *
    * @param {string} sessionId
    * @param {Array} events - Array of Assurance event objects
-   * @returns {Promise<void>}
+   * @returns {Promise<Object>} Stats: { added, duplicates, total }
    */
   async addEvents(sessionId, events) {
     const session = this.sessions.get(sessionId);
@@ -138,17 +144,90 @@ class SessionManager {
       throw new Error(`Session ${sessionId} not found`);
     }
 
-    // Store raw events in session
-    session.events.push(...events);
+    // Deduplicate events using Set
+    const newEvents = [];
+    let duplicateCount = 0;
 
-    // Add to event vector store for semantic search
+    for (const event of events) {
+      // Generate event ID (prefer event.id, fallback to eventId, then hash)
+      const eventId = event.id || event.eventId;
+
+      if (!eventId) {
+        // Event has no ID - use content hash for deduplication
+        const eventHash = this._hashEvent(event);
+
+        if (session.eventIds.has(eventHash)) {
+          duplicateCount++;
+          continue; // Skip duplicate
+        }
+
+        session.eventIds.add(eventHash);
+        newEvents.push(event);
+      } else {
+        // Event has ID - use it for deduplication
+        if (session.eventIds.has(eventId)) {
+          duplicateCount++;
+          continue; // Skip duplicate
+        }
+
+        session.eventIds.add(eventId);
+        newEvents.push(event);
+      }
+    }
+
+    // Log deduplication results
+    if (duplicateCount > 0) {
+      console.log(
+        `⚠️  [${sessionId.substring(
+          0,
+          8
+        )}] Skipped ${duplicateCount} duplicate events`
+      );
+    }
+
+    // If all events were duplicates, return early
+    if (newEvents.length === 0) {
+      console.log(
+        `ℹ️  [${sessionId.substring(0, 8)}] All ${
+          events.length
+        } events were duplicates (idempotent request)`
+      );
+      return {
+        added: 0,
+        duplicates: duplicateCount,
+        total: session.events.length,
+      };
+    }
+
+    // Store only new events
+    session.events.push(...newEvents);
+
+    // Add to event vector store for semantic search (only new events)
     const eventVectorStore = this.eventVectorStores.get(sessionId);
     const { addEventsToVectorStore } = await import("./eventVectorStore.js");
-    await addEventsToVectorStore(eventVectorStore, events);
+    await addEventsToVectorStore(eventVectorStore, newEvents);
 
     console.log(
-      `✅ Added ${events.length} events to session ${sessionId.substring(0, 8)}`
+      `✅ [${sessionId.substring(0, 8)}] Added ${newEvents.length} events ` +
+          `(${duplicateCount} duplicates skipped, total: ${session.events.length})`
     );
+
+    return {
+      added: newEvents.length,
+      duplicates: duplicateCount,
+      total: session.events.length,
+    };
+  }
+
+  /**
+   * Generate hash for event (for events without IDs)
+   * @private
+   * @param {Object} event - Event object
+   * @returns {string} Hash of event
+   */
+  _hashEvent(event) {
+    // Use JSON string as hash (simple but effective for deduplication)
+    return JSON.stringify(event);
   }
 
   /**
