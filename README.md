@@ -1,364 +1,317 @@
-# Adobe Assurance AI Agent
+# 🤖 Adobe Assurance AI Agent
 
-AI-powered debugging assistant for Adobe Assurance sessions using local LLM (Ollama) and LangChain.
+**AI-powered debugging assistant for Adobe Assurance sessions using local LLM (Ollama) and LangChain.**
 
-## Quick Start (For Team Members)
+RAG-enabled conversational AI that helps developers debug Adobe Experience Platform SDK events, analyze tracking issues, and troubleshoot mobile app implementations.
+
+---
+
+## ⚡ Quick Start
 
 ```bash
-# 1. Install Ollama (if not already installed)
+# 1. Install Ollama
 curl -fsSL https://ollama.com/install.sh | sh
 
 # 2. Pull required models
 ollama pull llama3.1:8b
 ollama pull nomic-embed-text
 
-# 3. Clone and setup project
-cd assurance_ai_agent
+# 3. Clone and setup
+git clone git@github.com:sagar-sharma-adobe/assurance-ai-agent.git
+cd assurance-ai-agent
 npm install --legacy-peer-deps
 
-# 4. Configure environment
+# 4. Configure
 cp .env.example .env
 
-# 5. Start Ollama service (in a separate terminal)
+# 5. Start Ollama (Terminal 1)
 ollama serve
 
-# 6. Test the setup
-npm test
-
-# 7. Start the server
+# 6. Start server (Terminal 2)
 npm start
 ```
 
-The server will be available at `http://localhost:3001`
+**Server:** `http://localhost:3001`
+
+**Test:** `npm test`
 
 ---
 
-## 📤 For Client Developers: Uploading Events
+## 🎯 What It Does
 
-**Working on the client side?** See the complete guide:
-
-### 👉 **[CLIENT_UPLOAD_GUIDE.md](./CLIENT_UPLOAD_GUIDE.md)** 👈
-
-This guide covers:
-- ✅ Chunked upload implementation (for 500-1500 event sessions)
-- ✅ React/JavaScript code examples
-- ✅ Progress tracking and error handling
-- ✅ Production-ready implementation with retry logic
-- ✅ Testing and troubleshooting
-
-**TL;DR:** Split events into chunks of 100, upload sequentially, show progress to users.
+- **💬 RAG-Enabled Chat** - Ask questions, get answers from documentation
+- **📊 Event Analysis** - Upload & search Assurance events semantically
+- **📚 Knowledge Base** - Load docs from URLs/PDFs for AI context
+- **🔍 Smart Search** - Vector similarity search across events & docs
+- **💾 Session Management** - Track conversations & debugging sessions
 
 ---
 
-## Prerequisites
+## 📖 Documentation
 
-- **Node.js** v18+ 
-- **Ollama** installed locally ([ollama.com](https://ollama.com/download))
+### **For New Users**
+- **[📚 Quick Start](#-quick-start)** - Get running in 5 minutes (above)
+- **[🏗️ Architecture](./docs/ARCHITECTURE.md)** - How the system works
+- **[📡 API Reference](./docs/API_REFERENCE.md)** - All endpoints with examples
 
-**Note:** This project uses `@langchain/ollama` (not the deprecated `@langchain/community` package)
+### **For Developers**
+- **[🛠️ Development Guide](./docs/DEVELOPMENT.md)** - Develop & extend features
+- **[🚀 Deployment Guide](./docs/DEPLOYMENT.md)** - Deploy & troubleshoot
 
-## Project Structure
+### **For Client Developers**
+- **[📱 Client Guide](./docs/CLIENT_GUIDE.md)** - Implement chunked event uploads
 
-```
-assurance-ai-agent/
-├── server.js                      # Entry point - starts the server
-├── test-ollama.js                 # Ollama connection test
-│
-├── src/                           # Source code (modular architecture)
-│   ├── config/                    # Configuration
-│   │   ├── constants.js           # App constants (paths, prompts, etc.)
-│   │   └── ollama.js              # LLM and embeddings setup
-│   │
-│   ├── services/                  # Business logic
-│   │   ├── sessionManager.js      # Session management (Class)
-│   │   ├── vectorStore.js         # Knowledge base vector store (Functions)
-│   │   └── eventVectorStore.js    # Per-session event embeddings (Functions)
-│   │
-│   ├── routes/                    # API endpoint definitions
-│   │   ├── health.routes.js       # Health check endpoint
-│   │   ├── session.routes.js      # Session management endpoints
-│   │   ├── chat.routes.js         # Chat/conversation endpoint
-│   │   ├── events.routes.js       # Event upload & search endpoints
-│   │   └── index.js               # Route aggregator
-│   │
-│   └── app.js                     # Express app configuration
-│
-├── vector_store/                  # Vector DB storage (gitignored)
-├── knowledge_base/                # Uploaded documents (gitignored)
-│
-├── package.json                   # Dependencies
-├── .env                           # Local configuration (not in git)
-├── .env.example                   # Example configuration
-└── README.md                      # This file
-```
+---
 
-### Code Organization
+## 🚀 Core Features
 
-The codebase follows a **modular architecture** for better maintainability:
-
-- **`config/`** - Environment and setup configuration
-- **`services/`** - Business logic (uses classes when state is needed, functions otherwise)
-- **`routes/`** - API endpoint definitions (Express routers)
-- **`app.js`** - Express middleware and app configuration
-- **`server.js`** - Simple entry point that initializes and starts everything
-
-## API Endpoints
-
-### Health Check
-```bash
-GET http://localhost:3001/api/health
-```
-Returns server status and Ollama connection state.
-
-### Initialize Session
-```bash
-POST http://localhost:3001/api/session/init
-Content-Type: application/json
-
-{
-  "userId": "test-user",
-  "metadata": {
-    "appVersion": "1.0.0",
-    "platform": "iOS"
-  }
-}
-```
-Returns a `sessionId` for subsequent requests.
-
-### Send Chat Message
-```bash
-POST http://localhost:3001/api/chat
-Content-Type: application/json
-
-{
-  "sessionId": "<your-session-id>",
-  "message": "What is Adobe Assurance?"
-}
-```
-Returns AI response with conversation context maintained.
-
-### Get Conversation History
-```bash
-GET http://localhost:3001/api/session/<session-id>/history
-```
-Returns full conversation history for a session.
-
-### List All Sessions
-```bash
-GET http://localhost:3001/api/sessions
-```
-Returns all active sessions with metadata.
-
-### Get Upload Configuration
-```bash
-GET http://localhost:3001/api/events/config
-```
-Returns recommended settings for chunked uploads (chunk size, limits, etc.).
-
-### Upload Assurance Events (Chunked Upload Support)
-```bash
-POST http://localhost:3001/api/events/upload
-Content-Type: application/json
-
-{
-  "sessionId": "your-session-id",
-  "events": [
-    {
-      "type": "Analytics",
-      "name": "trackAction",
-      "timestamp": "2025-12-10T10:00:00Z",
-      "payload": { "action": "buttonClick" }
-    }
-  ],
-  "chunkInfo": {
-    "current": 1,
-    "total": 15,
-    "isLast": false
-  }
-}
-```
-Uploads Assurance events to a session and creates vector embeddings for semantic search.
-
-**⚡ Performance Note:** For large event batches (500-1500 events):
-- Split into chunks of 100 events for optimal performance
-- Max 200 events per request (enforced)
-- Include `chunkInfo` for progress tracking
-- See [CLIENT_UPLOAD_GUIDE.md](./CLIENT_UPLOAD_GUIDE.md) for implementation examples
-
-### Search Events Semantically
-```bash
-POST http://localhost:3001/api/events/search
-Content-Type: application/json
-
-{
-  "sessionId": "your-session-id",
-  "query": "analytics tracking",
-  "limit": 5
-}
-```
-Performs semantic search across session events using vector embeddings.
-
-### Get Session Events
-```bash
-GET http://localhost:3001/api/events/:sessionId
-```
-Retrieves all raw events for a session.
-
-### Get Event Statistics
-```bash
-GET http://localhost:3001/api/events/:sessionId/stats
-```
-Returns statistics and analytics for session events.
-
-## Features
-
-✅ **Conversation Management** - Maintains context across multiple messages  
-✅ **Session Tracking** - Multiple independent debugging sessions  
-✅ **Adobe Assurance Context** - Specialized AI for Adobe SDK debugging  
-✅ **Event Vector Store** - Per-session semantic search across Assurance events  
-✅ **Local LLM** - Privacy-focused with Ollama (no cloud API needed)  
-✅ **Knowledge Base Ready** - HNSWLib integration for document embeddings  
-✅ **Modular Architecture** - Clean, maintainable, team-friendly codebase  
-✅ **REST API** - Easy integration with any frontend
-
-## Technology Stack
-
-- **Runtime:** Node.js v18+ with ES Modules
-- **Framework:** Express.js for REST API
-- **LLM:** Ollama with llama3.1:8b model
-- **Embeddings:** nomic-embed-text via Ollama
-- **Vector Store:** HNSWLib (in-process, no separate server needed)
-- **Language:** JavaScript with JSDoc comments
-
-## Development
+### 1. **RAG-Enabled Chat**
 
 ```bash
-npm run dev  # Run with auto-reload (Node 18+)
+# Create session
+curl -X POST http://localhost:3001/api/session/init \
+  -H "Content-Type: application/json" \
+  -d '{"userId": "developer"}'
+
+# Ask a question (AI searches knowledge base automatically)
+curl -X POST http://localhost:3001/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sessionId": "YOUR_SESSION_ID",
+    "message": "What is Adobe Assurance?"
+  }'
 ```
 
-### For Developers: Where to Find Things
+**Response includes:** AI answer + `knowledgeBaseUsed` flag
 
-**Need to modify an API endpoint?**
-- Health check → `src/routes/health.routes.js`
-- Session management → `src/routes/session.routes.js`
-- Chat logic → `src/routes/chat.routes.js`
-- Event upload/search → `src/routes/events.routes.js`
+### 2. **Event Upload (Chunked)**
 
-**Need to change business logic?**
-- Session operations → `src/services/sessionManager.js`
-- Knowledge base vector store → `src/services/vectorStore.js`
-- Event vector store → `src/services/eventVectorStore.js`
+For large event batches (500-1500 events), use chunked uploads:
 
-**Need to update configuration?**
-- Environment variables → `.env`
-- Constants/prompts → `src/config/constants.js`
-- LLM setup → `src/config/ollama.js`
-
-**Adding new features?**
-1. Add service logic in `src/services/`
-2. Create new routes in `src/routes/`
-3. Register routes in `src/routes/index.js`
-4. No need to touch `server.js` or `app.js`
-
-### 🔗 Integration Points for Team Members
-
-**Working on Event Analysis?**
-1. **Event Parsing**: Update `addEventsToVectorStore()` in `src/services/eventVectorStore.js`
-   - Customize how events are formatted for embedding
-   - Add event type classification
-   - Extract relevant fields
-
-2. **Event Analytics**: Implement `getEventStats()` in `src/services/eventVectorStore.js`
-   - Event type distribution
-   - Error rate calculation
-   - Timeline analysis
-
-3. **Event Routes**: Extend `src/routes/events.routes.js`
-   - Add validation for event structure
-   - Add filters for event search
-   - Create custom analytics endpoints
-
-**Using Event Vector Store in Your Code:**
-```javascript
-// Get the event vector store for a session
-const eventVectorStore = sessionManager.getEventVectorStore(sessionId);
-
-// Search for relevant events
-const { searchEvents } = await import('./services/eventVectorStore.js');
-const relevantEvents = await searchEvents(eventVectorStore, "analytics tracking", 5);
+```bash
+# Upload events in chunks of 100
+curl -X POST http://localhost:3001/api/events/upload \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sessionId": "YOUR_SESSION_ID",
+    "events": [...100 events...],
+    "chunkInfo": { "current": 1, "total": 15, "isLast": false }
+  }'
 ```
 
-**Working on Knowledge Base?**
-- Knowledge base RAG is the next feature to be implemented
-- Files to extend: `src/services/vectorStore.js` and `src/routes/chat.routes.js`
-- TODO comments mark integration points
+**See:** [Client Guide](./docs/CLIENT_GUIDE.md) for full implementation
 
-### Architecture Principles
+### 3. **Knowledge Base Management**
 
-- **Classes** are used when state needs to be managed (e.g., `SessionManager`)
-- **Functions** are used for stateless operations (e.g., vector store utilities)
-- **Routes** only handle HTTP request/response - delegate logic to services
-- **Services** contain business logic and can be tested independently
+```bash
+# Load documentation from URL
+curl -X POST http://localhost:3001/api/knowledge/load-url \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://developer.adobe.com/client-sdks/documentation/platform-assurance/",
+    "title": "Adobe Assurance Overview"
+  }'
 
-## Troubleshooting
+# Upload PDF/text file
+curl -X POST http://localhost:3001/api/knowledge/upload \
+  -F "document=@/path/to/guide.pdf"
 
-**Cannot connect to Ollama**
-- Ensure Ollama is running: `ollama serve`
-- Check models: `ollama list` (should show `llama3.1:8b` and `nomic-embed-text`)
-- Test connection: `npm test`
+# List loaded documents
+curl http://localhost:3001/api/knowledge/documents
+```
 
-**Dependency conflicts**
-- Use `npm install --legacy-peer-deps`
-- Make sure you're using Node.js v18+
+---
 
-**Corporate network issues**
-- Create `.npmrc`: `echo "registry=https://registry.npmjs.org/" > .npmrc`
+## 🧪 Testing
 
-**Vector store initialization fails**
-- Check if `vector_store/` directory has write permissions
-- Delete `vector_store/` and restart server to recreate
-- Ensure sufficient disk space for embeddings storage
+```bash
+# Test Ollama connectivity
+npm test
 
-**Module import errors**
-- This project uses ES Modules (`"type": "module"` in package.json)
-- Use `import` not `require`
-- Some packages (like pdf-parse) need special handling - see `server.js` for examples
+# Test chunked upload
+npm run test:upload
 
-## Roadmap / Upcoming Features
+# Test RAG pipeline
+npm run test:rag
 
-🚧 **Knowledge Base Integration (RAG)**
-- Load documentation from URLs and PDFs
-- Semantic search across knowledge base
-- AI responses powered by actual Adobe Assurance documentation
+# Run all tests
+npm run test:all
+```
 
-🚧 **Event Analysis**
-- Upload Assurance session events
-- Semantic search for events
-- AI-powered event sequence analysis
+---
 
-🚧 **Advanced Query Routing**
-- Classify queries (general vs document-specific vs event-specific)
-- Route to appropriate handler
+## 📊 API Endpoints
 
-## Contributing
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/health` | GET | Health check |
+| `/api/session/init` | POST | Create session |
+| `/api/chat` | POST | RAG-enabled chat |
+| `/api/events/upload` | POST | Upload events (chunked) |
+| `/api/events/search` | POST | Search events |
+| `/api/knowledge/load-url` | POST | Load from URL |
+| `/api/knowledge/upload` | POST | Upload PDF/text |
+| `/api/knowledge/search` | POST | Search knowledge base |
 
-This project follows a modular architecture to make collaboration easy:
+**Full API documentation:** [API Reference](./docs/API_REFERENCE.md)
 
-1. **Fork and clone** the repository
-2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
-3. **Make your changes** in the appropriate module (`src/services/`, `src/routes/`, etc.)
-4. **Test locally** with `npm start`
-5. **Commit** with clear messages (`git commit -m 'Add amazing feature'`)
-6. **Push** and create a Pull Request
+---
 
-**Code Style:**
-- Use ES6+ features (async/await, arrow functions, destructuring)
-- Add JSDoc comments for functions
-- Follow existing patterns (classes for state, functions for utilities)
-- Keep files focused (single responsibility)
+## 🏗️ Architecture
 
-## License
+```
+┌──────────────────────────────────┐
+│     Express.js REST API          │
+│  (Session, Chat, Events, KB)     │
+└────────┬─────────────────────────┘
+         │
+    ┌────┴─────┬──────────┐
+    │          │          │
+┌───▼────┐ ┌──▼──────┐ ┌─▼────────┐
+│Session │ │Knowledge│ │  Ollama  │
+│Manager │ │  Base   │ │  (LLM)   │
+│        │ │ (RAG)   │ │          │
+└────────┘ └─────────┘ └──────────┘
+```
 
-Apache License 2.0 - see [LICENSE](LICENSE) file for details
+**Tech Stack:**
+- **Runtime:** Node.js v18+ (ES modules)
+- **Framework:** Express.js
+- **LLM:** Ollama (llama3.1:8b)
+- **Embeddings:** nomic-embed-text
+- **Vector Store:** HNSWLib (persistent)
+- **Doc Loading:** Cheerio, pdf-parse, Axios
 
-Copyright 2025 Sagar Sharma
+**Learn more:** [Architecture Guide](./docs/ARCHITECTURE.md)
+
+---
+
+## 🛠️ Development
+
+```bash
+# Start with auto-reload
+npm run dev
+
+# Project structure
+src/
+├── config/         # Configuration & LLM setup
+├── services/       # Business logic
+├── routes/         # API endpoints
+└── app.js          # Express app
+
+tests/              # Test scripts
+docs/               # Documentation
+```
+
+**Developer guide:** [Development Guide](./docs/DEVELOPMENT.md)
+
+---
+
+## 🚀 Deployment
+
+### Local (PoC)
+```bash
+npm start
+```
+
+### Production
+```bash
+# Use PM2 for process management
+npm install -g pm2
+pm2 start server.js --name assurance-ai-agent
+pm2 logs
+```
+
+**Full deployment guide:** [Deployment Guide](./docs/DEPLOYMENT.md)
+
+---
+
+## 📚 How RAG Works
+
+1. **User asks a question**
+2. **System searches** knowledge base for relevant docs (top 3 chunks)
+3. **AI receives** question + relevant documentation
+4. **AI generates** answer using both documentation & conversation context
+5. **Response returned** with `knowledgeBaseUsed: true`
+
+**Result:** Accurate, contextual answers based on actual documentation!
+
+---
+
+## 🎯 Use Cases
+
+- **Debug SDK events** - "Why isn't my analytics event firing?"
+- **Understand Assurance** - "What is Adobe Assurance?"
+- **Troubleshoot issues** - "How do I fix tracking problems?"
+- **Learn best practices** - "What's the recommended SDK setup?"
+
+---
+
+## 🤝 Contributing
+
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Commit** changes (`git commit -m 'Add amazing feature'`)
+4. **Push** to branch (`git push origin feature/amazing-feature`)
+5. **Open** a Pull Request
+
+**Development guide:** [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md)
+
+---
+
+## 📝 License
+
+Apache License 2.0 - See [LICENSE](./LICENSE) for details
+
+---
+
+## 🆘 Troubleshooting
+
+**Server won't start?**
+- Check Ollama is running: `curl http://localhost:11434/api/tags`
+- Check models are installed: `ollama list`
+
+**Slow responses?**
+- Ollama using GPU? Check during startup logs
+- Try smaller model: `ollama pull llama3.1:7b`
+
+**Can't connect?**
+- Server running on correct port? Check `.env` file
+- Firewall blocking? Check security settings
+
+**Full troubleshooting:** [Deployment Guide - Troubleshooting](./docs/DEPLOYMENT.md#troubleshooting)
+
+---
+
+## 📞 Support
+
+- **Issues:** [GitHub Issues](https://github.com/sagar-sharma-adobe/assurance-ai-agent/issues)
+- **Docs:** [Documentation](./docs/)
+- **Email:** sagsharma@adobe.com
+
+---
+
+## 🎉 What's New
+
+### v1.0.0 (Current)
+- ✅ RAG-enabled chat with knowledge base
+- ✅ Chunked event upload (500-1500 events)
+- ✅ Document loading (URLs, PDFs, text)
+- ✅ Per-session event vector stores
+- ✅ Semantic search across events & docs
+- ✅ Comprehensive API & documentation
+
+---
+
+## 🗺️ Roadmap
+
+- [ ] Event type classification & analytics
+- [ ] Knowledge graph extraction
+- [ ] Multi-language support
+- [ ] Cloud LLM integration (OpenAI, Claude)
+- [ ] Web UI for debugging
+- [ ] Session persistence (Redis/PostgreSQL)
+
+---
+
+**Built with ❤️ for Adobe Assurance developers**
