@@ -351,7 +351,9 @@ router.get('/endpoint', (req, res) => {
 
 ## Working with Vector Stores
 
-### Knowledge Base Vector Store
+### Knowledge Base Vector Store (ChromaDB)
+
+**Technology:** ChromaDB (full CRUD, persistent via Docker)
 
 ```javascript
 import { getVectorStore, saveVectorStore } from '../services/vectorStore.js';
@@ -362,10 +364,12 @@ const results = await vectorStore.similaritySearch(query, 3);
 
 // Add documents
 await vectorStore.addDocuments(chunks);
-await saveVectorStore(); // Persist to disk
+await saveVectorStore(); // No-op for ChromaDB (auto-persists)
 ```
 
-### Event Vector Store (Per-Session)
+### Event Vector Store (HNSWLib, Per-Session)
+
+**Technology:** HNSWLib (lightweight, in-memory with disk persistence)
 
 ```javascript
 import sessionManager from '../services/sessionManager.js';

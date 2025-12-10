@@ -7,25 +7,34 @@ Guide for deploying and operating the Adobe Assurance AI Agent.
 ## Quick Deploy (Local)
 
 ```bash
-# 1. Install Ollama
+# 1. Install Docker Desktop (for ChromaDB)
+# Download from: https://www.docker.com/products/docker-desktop
+
+# 2. Start ChromaDB
+docker run -d --name chromadb \
+  -p 8000:8000 \
+  -v chroma_data:/chroma/chroma \
+  chromadb/chroma:latest
+
+# 3. Install Ollama
 curl -fsSL https://ollama.com/install.sh | sh
 
-# 2. Pull models
+# 4. Pull models
 ollama pull llama3.1:8b
 ollama pull nomic-embed-text
 
-# 3. Clone & setup
+# 5. Clone & setup
 git clone git@github.com:sagar-sharma-adobe/assurance-ai-agent.git
 cd assurance-ai-agent
 npm install --legacy-peer-deps
 
-# 4. Configure
+# 6. Configure
 cp .env.example .env
 
-# 5. Start Ollama (separate terminal)
+# 7. Start Ollama (separate terminal)
 ollama serve
 
-# 6. Start server
+# 8. Start server
 npm start
 ```
 
@@ -52,7 +61,63 @@ Server runs on `http://localhost:3001`
 
 ## Installation Steps
 
-### 1. Install Ollama
+### 1. Install Docker (for ChromaDB)
+
+**macOS:**
+```bash
+brew install --cask docker
+# Or download from: https://www.docker.com/products/docker-desktop
+```
+
+**Linux:**
+```bash
+# Ubuntu/Debian
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+# Verify
+docker --version
+```
+
+**Windows:**
+Download Docker Desktop from [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop)
+
+### 2. Start ChromaDB Container
+
+```bash
+# Pull image
+docker pull chromadb/chroma:latest
+
+# Run container with persistent storage
+docker run -d --name chromadb \
+  -p 8000:8000 \
+  -v chroma_data:/chroma/chroma \
+  chromadb/chroma:latest
+
+# Verify it's running
+docker ps | grep chromadb
+curl http://localhost:8000/api/v2/heartbeat
+```
+
+**ChromaDB Management:**
+```bash
+# Stop
+docker stop chromadb
+
+# Start
+docker start chromadb
+
+# Restart
+docker restart chromadb
+
+# View logs
+docker logs chromadb
+
+# Remove (data persists in volume)
+docker rm chromadb
+```
+
+### 3. Install Ollama
 
 **macOS:**
 ```bash
@@ -72,7 +137,7 @@ Download from [ollama.com/download](https://ollama.com/download)
 ollama --version
 ```
 
-### 2. Pull Required Models
+### 4. Pull Required Models
 
 ```bash
 # Chat model (8GB download)
@@ -85,7 +150,7 @@ ollama pull nomic-embed-text
 ollama list
 ```
 
-### 3. Install Node.js Dependencies
+### 5. Install Node.js Dependencies
 
 ```bash
 cd assurance-ai-agent
@@ -95,7 +160,7 @@ npm install --legacy-peer-deps
 **Why `--legacy-peer-deps`?**
 Some LangChain packages have peer dependency conflicts. This flag bypasses them safely.
 
-### 4. Configure Environment
+### 6. Configure Environment
 
 ```bash
 cp .env.example .env
@@ -262,16 +327,17 @@ if (cluster.isPrimary) {
 
 ### 3. Vector Store Optimization
 
-**Increase HNSW parameters** (in `vectorStore.js`):
-```javascript
-const vectorStore = await HNSWLib.fromTexts(
-  texts,
-  metadatas,
-  embeddings,
-  {
-    space: 'cosine',
-    numDimensions: 768,
-    maxElements: 10000,
+**ChromaDB Configuration:**
+- Knowledge base uses ChromaDB (running in Docker)
+- No code changes needed - ChromaDB is already optimized
+- To scale: allocate more resources to Docker container
+```bash
+# Example: Run ChromaDB with more memory
+docker run -d --name chromadb \
+  -p 8000:8000 \
+  -v chroma_data:/chroma/chroma \
+  --memory="4g" \
+  chromadb/chroma:latest
   }
 );
 ```
@@ -422,23 +488,62 @@ NODE_OPTIONS="--max-old-space-size=4096" npm start
 
 ### Vector Store Issues
 
-**Error:** `Vector store not initialized`
+**Error:** `Failed to initialize ChromaDB vector store`
 
 **Solution:**
 ```bash
-# Delete and recreate
-rm -rf vector_store/
-npm start  # Will create fresh store
+# Check if ChromaDB is running
+docker ps | grep chromadb
+
+# If not running, start it
+docker start chromadb
+
+# If container doesn't exist, create it
+docker run -d --name chromadb \
+  -p 8000:8000 \
+  -v chroma_data:/chroma/chroma \
+  chromadb/chroma:latest
+
+# Verify ChromaDB is responding
+curl http://localhost:8000/api/v2/heartbeat
 ```
 
 ---
 
-**Error:** `Cannot load vector store from disk`
+**Error:** `ChromaDB client not initialized`
 
 **Solution:**
 ```bash
-# Corrupted store - delete and start fresh
-rm -rf vector_store/
+# Ensure ChromaDB is accessible
+docker logs chromadb
+
+# Check port 8000 is not in use by another service
+lsof -i :8000
+
+# Restart ChromaDB
+docker restart chromadb
+```
+
+---
+
+**Error:** `Vector store not initialized` or `Collection not found`
+
+**Solution:**
+```bash
+# Reset ChromaDB collection
+docker stop chromadb
+docker rm chromadb
+docker volume rm chroma_data
+
+# Start fresh
+docker run -d --name chromadb \
+  -p 8000:8000 \
+  -v chroma_data:/chroma/chroma \
+  chromadb/chroma:latest
+
+# Clear metadata
+rm -rf vector_store/documents.json
+
 # Restart server
 npm start
 ```

@@ -4,8 +4,7 @@
  */
 
 // Vector store configuration
-export const CHROMA_URL = process.env.CHROMA_URL || 'http://localhost:8000';
-export const VECTOR_STORE_PATH = './vector_store'; // Legacy HNSWLib path (kept for migration)
+export const CHROMA_URL = process.env.CHROMA_URL || "http://localhost:8000";
 export const DOCS_METADATA_FILE = './vector_store/documents.json';
 export const UPLOAD_DIR = './knowledge_base/uploads';
 

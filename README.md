@@ -9,25 +9,34 @@ RAG-enabled conversational AI that helps developers debug Adobe Experience Platf
 ## ⚡ Quick Start
 
 ```bash
-# 1. Install Ollama
+# 1. Install Docker Desktop (for ChromaDB)
+# Download from: https://www.docker.com/products/docker-desktop
+
+# 2. Start ChromaDB
+docker run -d --name chromadb \
+  -p 8000:8000 \
+  -v chroma_data:/chroma/chroma \
+  chromadb/chroma:latest
+
+# 3. Install Ollama
 curl -fsSL https://ollama.com/install.sh | sh
 
-# 2. Pull required models
+# 4. Pull required models
 ollama pull llama3.1:8b
 ollama pull nomic-embed-text
 
-# 3. Clone and setup
+# 5. Clone and setup
 git clone git@github.com:sagar-sharma-adobe/assurance-ai-agent.git
 cd assurance-ai-agent
 npm install --legacy-peer-deps
 
-# 4. Configure
+# 6. Configure
 cp .env.example .env
 
-# 5. Start Ollama (Terminal 1)
+# 7. Start Ollama (Terminal 1)
 ollama serve
 
-# 6. Start server (Terminal 2)
+# 8. Start server (Terminal 2)
 npm start
 ```
 
@@ -66,21 +75,23 @@ npm start
 ## 📚 Pre-loaded Knowledge Base
 
 This repository includes a pre-loaded document for testing:
-- **Adobe Assurance Overview** (7 chunks, 5,408 characters)
-- Ready to use immediately after `npm start`
-- Add more documents or start fresh by deleting `vector_store/`
+- **Adobe Assurance Overview** (14 chunks, 10,637 characters)
+- **Storage:** ChromaDB (Docker container) + metadata in `vector_store/documents.json`
+- Ready to use immediately after starting ChromaDB and server
+- Add more documents via API or delete metadata to start fresh
 
-**Note:** The vector store is committed to git for team convenience during PoC phase.
-
-**Size Monitoring:**
+**Knowledge Base Management:**
 ```bash
-# Check current knowledge base size
-du -sh vector_store/
-
 # List all loaded documents
 curl http://localhost:3001/api/knowledge/documents
 
-# Consider moving to .gitignore when size exceeds ~10MB
+# Check metadata file size
+du -sh vector_store/
+
+# Load a new document
+curl -X POST http://localhost:3001/api/knowledge/load-url \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.com/docs", "title": "My Doc"}'
 ```
 
 ---
@@ -201,7 +212,7 @@ npm run test:all
 - **Framework:** Express.js
 - **LLM:** Ollama (llama3.1:8b)
 - **Embeddings:** nomic-embed-text
-- **Vector Store:** HNSWLib (persistent)
+- **Vector Store:** ChromaDB (Docker container)
 - **Doc Loading:** Cheerio, pdf-parse, Axios
 
 **Learn more:** [Architecture Guide](./docs/ARCHITECTURE.md)

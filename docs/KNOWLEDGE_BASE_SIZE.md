@@ -1,118 +1,131 @@
 # 📏 Knowledge Base Size Guidelines
 
-## Current Status
+## Current Status (ChromaDB Architecture)
 
-**Vector Store Size:** 48KB  
-**Documents Loaded:** 1  
-**Status:** ✅ Safe to commit to git
-
----
-
-## Size Growth Expectations
-
-### Per Document Estimates
-
-Based on Adobe Assurance Overview (5.4KB text):
-- **Text:** 5.4KB
-- **Storage:** 48KB total
-- **Ratio:** ~9x overhead
-
-**Formula:** `Total Size ≈ Text Size × 9`
-
-### Projected Growth
-
-| Documents | Avg Text Size | Est. Total Size | Git Safe? |
-|-----------|---------------|-----------------|-----------|
-| 1         | 5KB          | 48KB           | ✅ Yes    |
-| 5         | 5KB          | 240KB          | ✅ Yes    |
-| 10        | 10KB         | 900KB          | ✅ Yes    |
-| 20        | 10KB         | 1.8MB          | ✅ Yes    |
-| 50        | 10KB         | 4.5MB          | ✅ Yes    |
-| 100       | 10KB         | 9MB            | ⚠️ Consider moving |
-| 200       | 10KB         | 18MB           | ❌ Move to .gitignore |
+**Vector Store:** ChromaDB (Docker volume `chroma_data`)  
+**Metadata File:** `vector_store/documents.json` (833 bytes)  
+**Documents Loaded:** 2  
+**Git Committed:** ✅ Only metadata file (< 1KB)
 
 ---
 
-## When to Move Out of Git
+## 🎯 New Architecture Benefits
 
-### ⚠️ Consider at ~10MB
-- Git operations start slowing down
-- Clone time increases noticeably
-- Team members may have different KB needs
+### ChromaDB Storage
 
-### ❌ Must move at ~50MB
-- Git performance significantly impacted
-- Large binary files don't belong in git
-- Use external storage (S3, shared drive, etc.)
+**Vector embeddings** are stored in ChromaDB's Docker persistent volume:
+- ✅ **Not in git** - Docker volume `chroma_data` handles all vector data
+- ✅ **Scalable** - Can grow to GB without affecting git
+- ✅ **Shareable** - Export/import Docker volumes for team sharing
+
+**Only metadata** (`vector_store/documents.json`) is in git:
+- Contains document titles, URLs, chunk counts, hashes
+- Stays small (< 1KB per 100 documents)
+- Always safe to commit
+
+### Size Comparison
+
+| Storage Type | Old (HNSWLib) | New (ChromaDB) |
+|--------------|---------------|----------------|
+| Vector data  | In git ❌     | Docker volume ✅ |
+| Metadata     | In git ✅     | In git ✅ |
+| Git impact   | Grows with docs | Minimal |
+| Team sharing | Slow (git)    | Fast (volume export) |
 
 ---
 
-## How to Check Current Size
+## Metadata File Growth
+
+The `documents.json` file grows linearly with document count:
+
+| Documents | Metadata Size | Git Safe? |
+|-----------|---------------|-----------|
+| 10        | ~2KB         | ✅ Yes    |
+| 100       | ~20KB        | ✅ Yes    |
+| 1,000     | ~200KB       | ✅ Yes    |
+| 10,000    | ~2MB         | ✅ Yes    |
+
+**Verdict:** Metadata will always be safe to commit 🎉
+
+---
+
+## How to Monitor Size
+
+### Metadata File (Committed to Git)
 
 ```bash
-# Quick check
-du -sh vector_store/
+# Check metadata file size (always small)
+du -sh vector_store/documents.json
 
-# Detailed breakdown
-du -h vector_store/
-
-# List all documents
+# View all loaded documents
 curl http://localhost:3001/api/knowledge/documents | python3 -m json.tool
 ```
 
----
-
-## Migration Path (When Needed)
-
-### Step 1: Remove from Git Tracking
+### ChromaDB Vector Store (Docker Volume)
 
 ```bash
-# Keep local files, stop tracking
-git rm --cached -r vector_store/
+# Check Docker volume size
+docker system df -v | grep chroma_data
 
-# Commit the removal
-git commit -m "chore: move vector store out of git tracking"
+# Or inspect the volume
+docker volume inspect chroma_data
 
-# Push
-git push origin main
+# View ChromaDB logs
+docker logs chromadb
 ```
 
-### Step 2: Update .gitignore
+---
 
-Uncomment the line in `.gitignore`:
-```
-vector_store/  # Now active
-```
+## Team Sharing Options
 
-### Step 3: Document Setup for Team
+### Option 1: Share Docker Volume (Recommended)
 
-Update README.md:
-```markdown
-## 📚 Knowledge Base Setup
+**Export volume:**
+```bash
+# Create backup
+docker run --rm \
+  -v chroma_data:/data \
+  -v $(pwd):/backup \
+  alpine tar czf /backup/chroma_backup.tar.gz -C /data .
 
-After starting the server, load documents:
-
-# Option 1: Load from shared location
-cp -r /shared/drive/vector_store ./
-
-# Option 2: Load documents via API
-npm run load-docs  # Custom script
+# Share chroma_backup.tar.gz with team
 ```
 
-### Step 4: Consider Alternatives
+**Import volume:**
+```bash
+# Restore on another machine
+docker volume create chroma_data
+docker run --rm \
+  -v chroma_data:/data \
+  -v $(pwd):/backup \
+  alpine tar xzf /backup/chroma_backup.tar.gz -C /data
+```
 
-**For Large Knowledge Bases (>50MB):**
+### Option 2: Share Metadata + Reload Docs
 
-1. **External Vector DB**
-   - Chroma, Pinecone, Weaviate
-   - Shared across team
-   - Better for production
+**Share:**
+- Commit `vector_store/documents.json` to git (already done)
+- Team clones repo
 
-2. **Cloud Storage**
-   - S3 + download on startup
-   - Team syncs from cloud
+**Team Setup:**
+```bash
+# Start ChromaDB
+docker start chromadb
 
-3. **Document Bundle**
+# Run reload script (loads from metadata URLs)
+npm run reload-docs  # TODO: Create this script
+```
+
+### Option 3: External ChromaDB Server
+
+**For production or large teams:**
+
+1. **Hosted ChromaDB**
+   - Deploy ChromaDB to cloud (Docker, K8s)
+   - Update `CHROMA_URL` in `.env`
+   - All team members connect to same instance
+
+2. **Managed Service**
    - Store URLs/PDFs in git
    - Load on first run
    - Script: `npm run init-kb`
@@ -122,45 +135,52 @@ npm run load-docs  # Custom script
 ## Best Practices
 
 ### ✅ DO
-- Monitor size regularly (`du -sh vector_store/`)
-- Document what's loaded (`README.md`)
-- Provide setup scripts for team
-- Set size threshold alerts
+- Keep metadata (`documents.json`) in git
+- Monitor Docker volume size periodically
+- Document loaded documents in README
+- Export/share Docker volumes for team setup
+- Use URL-based document loading (reproducible)
 
 ### ❌ DON'T
-- Commit >50MB vector stores to git
-- Ignore growing repo size
-- Forget to document migration
-- Mix test/prod knowledge bases
+- Commit Docker volumes to git (unnecessary)
+- Forget to start ChromaDB before server
+- Mix development and production ChromaDB instances
+- Delete Docker volume without backup
 
 ---
 
 ## Automation Ideas
 
-### Size Alert Script
+### Docker Volume Backup Script
 
 ```bash
-# scripts/check-kb-size.sh
-SIZE=$(du -sk vector_store/ | cut -f1)
-THRESHOLD=10240  # 10MB in KB
+# scripts/backup-chromadb.sh
+#!/bin/bash
+BACKUP_FILE="chroma_backup_$(date +%Y%m%d_%H%M%S).tar.gz"
 
-if [ $SIZE -gt $THRESHOLD ]; then
-  echo "⚠️  Vector store size: $((SIZE/1024))MB"
-  echo "Consider moving to .gitignore"
-fi
+docker run --rm \
+  -v chroma_data:/data \
+  -v $(pwd):/backup \
+  alpine tar czf /backup/$BACKUP_FILE -C /data .
+
+echo "✅ Backup created: $BACKUP_FILE"
 ```
 
-### Pre-commit Hook
+### Document Reload Script
 
 ```bash
-# .git/hooks/pre-commit
-#!/bin/sh
-SIZE=$(du -sk vector_store/ 2>/dev/null | cut -f1)
-if [ ! -z "$SIZE" ] && [ $SIZE -gt 51200 ]; then
-  echo "❌ Vector store too large (>50MB) for git"
-  echo "Run: git rm --cached -r vector_store/"
-  exit 1
-fi
+# scripts/reload-docs.sh
+#!/bin/bash
+# Load all documents from metadata file
+
+DOCS=$(cat vector_store/documents.json | jq -r '.documents[] | select(.type=="url") | .url')
+
+for URL in $DOCS; do
+  echo "Loading: $URL"
+  curl -X POST http://localhost:3001/api/knowledge/load-url \
+    -H "Content-Type: application/json" \
+    -d "{\"url\": \"$URL\"}"
+done
 ```
 
 ---

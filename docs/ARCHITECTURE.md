@@ -57,9 +57,10 @@ Two separate vector stores:
 
 #### **a) Knowledge Base Vector Store**
 - **Purpose:** Store documentation for RAG
-- **Technology:** HNSWLib (in-memory, persistent to disk)
-- **Location:** `./vector_store/docstore/`
+- **Technology:** ChromaDB (Docker container with persistent volume)
+- **Location:** Docker volume `chroma_data`, metadata in `./vector_store/documents.json`
 - **Shared:** Across all sessions
+- **Features:** Full CRUD operations, URL-based updates, content-hash deduplication
 
 #### **b) Event Vector Stores**
 - **Purpose:** Store per-session Assurance events
@@ -148,7 +149,7 @@ RecursiveCharacterTextSplitter
 Ollama nomic-embed-text
      ↓
 [Vector Store]
-HNSWLib (persisted to disk)
+ChromaDB (Docker persistent volume)
      ↓
 Document metadata saved
 ./vector_store/documents.json
@@ -173,10 +174,15 @@ Document metadata saved
   - Embedding: nomic-embed-text
 
 ### **Vector Database**
-- **HNSWLib:** Hierarchical Navigable Small World graphs
+- **ChromaDB:** Production-ready vector database (Knowledge Base)
+  - Full CRUD operations (create, read, update, delete)
+  - Persistent storage via Docker volume
+  - Metadata filtering and advanced queries
+  - Runs as separate service (port 8000)
+- **HNSWLib:** Lightweight vector store (Event Stores)
   - In-memory with disk persistence
-  - Fast similarity search (cosine similarity)
-  - No separate server needed
+  - Fast similarity search
+  - Used for per-session event vector stores
 
 ### **Document Processing**
 - **Cheerio:** HTML parsing (jQuery-like API)
@@ -389,11 +395,12 @@ Developer Machine
 - **Trade-off:** Can't scale components independently
 - **Future:** Split into microservices when scale demands
 
-### **2. Why HNSWLib?**
-- **Decision:** In-memory vector store
-- **Reason:** Fast, no separate server, good for < 100K docs
-- **Trade-off:** Memory usage, single-machine limit
-- **Alternative:** Chroma, Pinecone, Weaviate (for scale)
+### **2. Why ChromaDB for Knowledge Base?**
+- **Decision:** ChromaDB for knowledge base, HNSWLib for event stores
+- **Reason:** Full CRUD needed for document updates, production-ready persistence
+- **Benefits:** Delete old chunks, URL-based updates, content-hash deduplication
+- **Trade-off:** Requires Docker container (simple to run locally)
+- **Event Stores:** Still use HNSWLib (lightweight, per-session isolation)
 
 ### **3. Why In-Memory Sessions?**
 - **Decision:** Map-based session storage

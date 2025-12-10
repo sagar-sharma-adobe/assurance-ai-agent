@@ -124,7 +124,7 @@ export async function searchSimilarDocuments(query, k = 4) {
 
 /**
  * Delete documents by URL from vector store
- * This is the KEY feature that HNSWLib didn't support!
+ * ChromaDB enables proper document updates (delete old + add new)
  * 
  * @param {string} url - URL of document to delete
  * @returns {Promise<number>} Number of documents deleted
