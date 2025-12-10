@@ -52,12 +52,14 @@ assurance-ai-agent/
 │   │
 │   ├── services/                  # Business logic
 │   │   ├── sessionManager.js      # Session management (Class)
-│   │   └── vectorStore.js         # Vector store operations (Functions)
+│   │   ├── vectorStore.js         # Knowledge base vector store (Functions)
+│   │   └── eventVectorStore.js    # Per-session event embeddings (Functions)
 │   │
 │   ├── routes/                    # API endpoint definitions
 │   │   ├── health.routes.js       # Health check endpoint
 │   │   ├── session.routes.js      # Session management endpoints
 │   │   ├── chat.routes.js         # Chat/conversation endpoint
+│   │   ├── events.routes.js       # Event upload & search endpoints
 │   │   └── index.js               # Route aggregator
 │   │
 │   └── app.js                     # Express app configuration
@@ -128,13 +130,58 @@ GET http://localhost:3001/api/sessions
 ```
 Returns all active sessions with metadata.
 
+### Upload Assurance Events
+```bash
+POST http://localhost:3001/api/events/upload
+Content-Type: application/json
+
+{
+  "sessionId": "your-session-id",
+  "events": [
+    {
+      "type": "Analytics",
+      "name": "trackAction",
+      "timestamp": "2025-12-10T10:00:00Z",
+      "payload": { "action": "buttonClick" }
+    }
+  ]
+}
+```
+Uploads Assurance events to a session and creates vector embeddings for semantic search.
+
+### Search Events Semantically
+```bash
+POST http://localhost:3001/api/events/search
+Content-Type: application/json
+
+{
+  "sessionId": "your-session-id",
+  "query": "analytics tracking",
+  "limit": 5
+}
+```
+Performs semantic search across session events using vector embeddings.
+
+### Get Session Events
+```bash
+GET http://localhost:3001/api/events/:sessionId
+```
+Retrieves all raw events for a session.
+
+### Get Event Statistics
+```bash
+GET http://localhost:3001/api/events/:sessionId/stats
+```
+Returns statistics and analytics for session events.
+
 ## Features
 
 ✅ **Conversation Management** - Maintains context across multiple messages  
 ✅ **Session Tracking** - Multiple independent debugging sessions  
 ✅ **Adobe Assurance Context** - Specialized AI for Adobe SDK debugging  
+✅ **Event Vector Store** - Per-session semantic search across Assurance events  
 ✅ **Local LLM** - Privacy-focused with Ollama (no cloud API needed)  
-✅ **Vector Store Ready** - HNSWLib integration for document embeddings  
+✅ **Knowledge Base Ready** - HNSWLib integration for document embeddings  
 ✅ **Modular Architecture** - Clean, maintainable, team-friendly codebase  
 ✅ **REST API** - Easy integration with any frontend
 
@@ -159,10 +206,12 @@ npm run dev  # Run with auto-reload (Node 18+)
 - Health check → `src/routes/health.routes.js`
 - Session management → `src/routes/session.routes.js`
 - Chat logic → `src/routes/chat.routes.js`
+- Event upload/search → `src/routes/events.routes.js`
 
 **Need to change business logic?**
 - Session operations → `src/services/sessionManager.js`
-- Vector store operations → `src/services/vectorStore.js`
+- Knowledge base vector store → `src/services/vectorStore.js`
+- Event vector store → `src/services/eventVectorStore.js`
 
 **Need to update configuration?**
 - Environment variables → `.env`
@@ -174,6 +223,39 @@ npm run dev  # Run with auto-reload (Node 18+)
 2. Create new routes in `src/routes/`
 3. Register routes in `src/routes/index.js`
 4. No need to touch `server.js` or `app.js`
+
+### 🔗 Integration Points for Team Members
+
+**Working on Event Analysis?**
+1. **Event Parsing**: Update `addEventsToVectorStore()` in `src/services/eventVectorStore.js`
+   - Customize how events are formatted for embedding
+   - Add event type classification
+   - Extract relevant fields
+
+2. **Event Analytics**: Implement `getEventStats()` in `src/services/eventVectorStore.js`
+   - Event type distribution
+   - Error rate calculation
+   - Timeline analysis
+
+3. **Event Routes**: Extend `src/routes/events.routes.js`
+   - Add validation for event structure
+   - Add filters for event search
+   - Create custom analytics endpoints
+
+**Using Event Vector Store in Your Code:**
+```javascript
+// Get the event vector store for a session
+const eventVectorStore = sessionManager.getEventVectorStore(sessionId);
+
+// Search for relevant events
+const { searchEvents } = await import('./services/eventVectorStore.js');
+const relevantEvents = await searchEvents(eventVectorStore, "analytics tracking", 5);
+```
+
+**Working on Knowledge Base?**
+- Knowledge base RAG is the next feature to be implemented
+- Files to extend: `src/services/vectorStore.js` and `src/routes/chat.routes.js`
+- TODO comments mark integration points
 
 ### Architecture Principles
 

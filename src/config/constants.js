@@ -15,7 +15,7 @@ export const PORT = process.env.PORT || 3001;
 export const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
 export const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama3.1:8b';
 export const OLLAMA_EMBEDDING_MODEL = process.env.OLLAMA_EMBEDDING_MODEL || 'nomic-embed-text';
-export const OLLAMA_TEMPERATURE = parseFloat(process.env.OLLAMA_TEMPERATURE || '0.7');
+export const OLLAMA_TEMPERATURE = parseFloat(process.env.OLLAMA_TEMPERATURE || '0.5');
 
 // System prompt for Adobe Assurance context
 export const SYSTEM_PROMPT = `You are an AI assistant specialized in Adobe Assurance debugging. 

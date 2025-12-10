@@ -13,43 +13,53 @@ const router = express.Router();
  * Initialize a new debugging session
  * Body: { userId?: string, metadata?: object }
  */
-router.post('/init', (req, res) => {
+router.post("/init", async (req, res) => {
   const { userId, metadata } = req.body;
 
-  const session = sessionManager.createSession(userId, metadata);
+  try {
+    const session = await sessionManager.createSession(userId, metadata);
 
-  res.json({
-    success: true,
-    sessionId: session.id,
-    message: 'Session initialized successfully',
-    session: {
-      id: session.id,
-      createdAt: session.createdAt,
-      userId: session.userId,
-    },
-  });
+    res.json({
+      success: true,
+      sessionId: session.id,
+      message: "Session initialized successfully",
+      session: {
+        id: session.id,
+        createdAt: session.createdAt,
+        userId: session.userId,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error creating session:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
 });
 
 /**
  * GET /api/session/:sessionId/history
  * Get conversation history for a session
  */
-router.get('/:sessionId/history', (req, res) => {
+router.get("/:sessionId/history", (req, res) => {
   const { sessionId } = req.params;
 
   const session = sessionManager.getSession(sessionId);
   if (!session) {
     return res.status(404).json({
       success: false,
-      error: 'Session not found',
+      error: "Session not found",
     });
   }
+
+  const history = sessionManager.getConversationHistory(sessionId);
 
   res.json({
     success: true,
     sessionId,
-    history: session.conversationHistory,
-    totalMessages: session.conversationHistory.length,
+    history: history,
+    totalMessages: history.length,
   });
 });
 

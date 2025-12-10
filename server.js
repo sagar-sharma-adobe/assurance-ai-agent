@@ -19,9 +19,9 @@ dotenv.config();
  */
 async function startServer() {
   try {
-    console.log('\n🚀 Starting Adobe Assurance AI Agent Server...\n');
+    console.log("\n🚀 Starting Adobe Assurance AI Agent Server...\n");
 
-    // Step 1: Initialize vector store
+    // Step 1: Initialize vector store for knowledge base
     await initializeVectorStore();
 
     // Step 2: Create and configure Express app
@@ -29,17 +29,21 @@ async function startServer() {
 
     // Step 3: Start listening
     app.listen(PORT, () => {
-      console.log('🚀 Adobe Assurance AI Agent Server');
+      console.log("🚀 Adobe Assurance AI Agent Server");
       console.log(`📡 Server running on http://localhost:${PORT}`);
       console.log(`🤖 Ollama Model: ${OLLAMA_MODEL}`);
       console.log(`🔮 Embedding Model: ${OLLAMA_EMBEDDING_MODEL}`);
-      console.log('\n📝 Available endpoints:');
-      console.log('   GET  /api/health');
-      console.log('   POST /api/session/init');
-      console.log('   POST /api/chat');
-      console.log('   GET  /api/session/:sessionId/history');
-      console.log('   GET  /api/sessions');
-      console.log('\n✨ Ready to assist with Adobe Assurance debugging!\n');
+      console.log("\n📝 Available endpoints:");
+      console.log("   GET  /api/health");
+      console.log("   POST /api/session/init");
+      console.log("   POST /api/chat");
+      console.log("   GET  /api/session/:sessionId/history");
+      console.log("   GET  /api/sessions");
+      console.log("   POST /api/events/upload");
+      console.log("   GET  /api/events/:sessionId");
+      console.log("   POST /api/events/search");
+      console.log("   GET  /api/events/:sessionId/stats");
+      console.log("\n✨ Ready to assist with Adobe Assurance debugging!\n");
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);

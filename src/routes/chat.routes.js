@@ -45,16 +45,29 @@ router.post('/', async (req, res) => {
   try {
     console.log(`💬 [${sessionId.substring(0, 8)}] User: ${message}`);
 
-    // Build conversation context from history
-    const conversationContext = session.conversationHistory
-      .map((msg) => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
-      .join('\n');
+    // Get conversation history
+    const conversationHistory =
+      sessionManager.getConversationHistory(sessionId);
+
+    // Build conversation context
+    const conversationContext = conversationHistory
+      .map(
+        (msg) => `${msg.role === "user" ? "User" : "Assistant"}: ${msg.content}`
+      )
+      .join("\n");
+
+    // TODO: When Knowledge Base is ready, add retrieval here
+    // const kbDocs = await searchSimilarDocuments(message, 3);
+
+    // TODO: Team can add event context from session event vector store
+    // const eventVectorStore = sessionManager.getEventVectorStore(sessionId);
+    // const relevantEvents = await searchEvents(eventVectorStore, message, 5);
 
     // Create full prompt with system instructions + history + new message
     const fullPrompt = `${SYSTEM_PROMPT}
 
 Previous conversation:
-${conversationContext || 'No previous messages'}
+${conversationContext || "No previous messages"}
 
 User: ${message}
 `;
@@ -66,10 +79,15 @@ User: ${message}
     const responseText = aiResponse.content;
 
     // Save to conversation history
-    sessionManager.addMessage(sessionId, 'user', message);
-    sessionManager.addMessage(sessionId, 'assistant', responseText);
+    sessionManager.addMessage(sessionId, "user", message);
+    sessionManager.addMessage(sessionId, "assistant", responseText);
 
-    console.log(`🤖 [${sessionId.substring(0, 8)}] Assistant: ${responseText.substring(0, 100)}...`);
+    console.log(
+      `🤖 [${sessionId.substring(0, 8)}] Assistant: ${responseText.substring(
+        0,
+        100
+      )}...`
+    );
 
     res.json({
       success: true,

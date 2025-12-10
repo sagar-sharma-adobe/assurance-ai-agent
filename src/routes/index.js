@@ -6,6 +6,7 @@
 import healthRoutes from './health.routes.js';
 import sessionRoutes from './session.routes.js';
 import chatRoutes from './chat.routes.js';
+import eventsRoutes from "./events.routes.js";
 
 /**
  * Register all routes with the Express app
@@ -13,14 +14,17 @@ import chatRoutes from './chat.routes.js';
  */
 export function registerRoutes(app) {
   // Health check endpoint
-  app.use('/api', healthRoutes);
+  app.use("/api", healthRoutes);
 
   // Session management endpoints
-  app.use('/api/session', sessionRoutes);
+  app.use("/api/session", sessionRoutes);
 
   // Chat endpoint
-  app.use('/api/chat', chatRoutes);
+  app.use("/api/chat", chatRoutes);
 
-  console.log('✅ Routes registered');
+  // Events endpoints (for Assurance event upload and search)
+  app.use("/api/events", eventsRoutes);
+
+  console.log("✅ Routes registered");
 }
 
