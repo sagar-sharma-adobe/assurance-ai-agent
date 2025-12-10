@@ -36,7 +36,7 @@ async function startServer() {
        console.log("\n📝 Available endpoints:");
        console.log("   GET  /api/health");
        console.log("   POST /api/session/init");
-       console.log("   POST /api/chat");
+       console.log("   POST /api/chat                        (RAG-enabled)");
        console.log("   GET  /api/session/:sessionId/history");
        console.log("   GET  /api/sessions");
        console.log("   GET  /api/events/config");
@@ -44,6 +44,11 @@ async function startServer() {
        console.log("   GET  /api/events/:sessionId");
        console.log("   POST /api/events/search");
        console.log("   GET  /api/events/:sessionId/stats");
+       console.log("   GET  /api/knowledge/documents");
+       console.log("   POST /api/knowledge/load-url");
+       console.log("   POST /api/knowledge/upload");
+       console.log("   POST /api/knowledge/load-batch");
+       console.log("   POST /api/knowledge/search");
        console.log("\n✨ Ready to assist with Adobe Assurance debugging!\n");
     });
   } catch (error) {

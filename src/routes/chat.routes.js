@@ -7,6 +7,7 @@ import express from 'express';
 import { llm } from '../config/ollama.js';
 import { SYSTEM_PROMPT } from '../config/constants.js';
 import sessionManager from '../services/sessionManager.js';
+import { getVectorStore } from "../services/vectorStore.js";
 
 const router = express.Router();
 
@@ -15,21 +16,21 @@ const router = express.Router();
  * Send a message and get AI response
  * Body: { sessionId: string, message: string }
  */
-router.post('/', async (req, res) => {
+router.post("/", async (req, res) => {
   const { sessionId, message } = req.body;
 
   // Validation
   if (!sessionId) {
     return res.status(400).json({
       success: false,
-      error: 'sessionId is required',
+      error: "sessionId is required",
     });
   }
 
   if (!message) {
     return res.status(400).json({
       success: false,
-      error: 'message is required',
+      error: "message is required",
     });
   }
 
@@ -38,7 +39,7 @@ router.post('/', async (req, res) => {
   if (!session) {
     return res.status(404).json({
       success: false,
-      error: 'Session not found. Please initialize a session first.',
+      error: "Session not found. Please initialize a session first.",
     });
   }
 
@@ -56,15 +57,42 @@ router.post('/', async (req, res) => {
       )
       .join("\n");
 
-    // TODO: When Knowledge Base is ready, add retrieval here
-    // const kbDocs = await searchSimilarDocuments(message, 3);
+    // RAG: Search Knowledge Base for relevant context
+    let knowledgeContext = "";
+    try {
+      const vectorStore = getVectorStore();
+      const relevantDocs = await vectorStore.similaritySearch(message, 3);
+
+      if (relevantDocs.length > 0) {
+        console.log(
+          `   📚 Found ${relevantDocs.length} relevant documents from knowledge base`
+        );
+        knowledgeContext =
+          "\n\nRelevant documentation:\n" +
+          relevantDocs
+            .map(
+              (doc, i) =>
+                `[Source ${i + 1}: ${
+                  doc.metadata.title || doc.metadata.source
+                }]\n${doc.pageContent}`
+            )
+            .join("\n\n");
+      }
+    } catch (error) {
+      console.warn("⚠️  Knowledge base search failed:", error.message);
+      // Continue without knowledge base context
+    }
 
     // TODO: Team can add event context from session event vector store
     // const eventVectorStore = sessionManager.getEventVectorStore(sessionId);
+    // const { searchEvents } = await import('../services/eventVectorStore.js');
     // const relevantEvents = await searchEvents(eventVectorStore, message, 5);
+    // if (relevantEvents.length > 0) {
+    //   eventContext = "\n\nRelevant events:\n" + relevantEvents.map(...).join("\n");
+    // }
 
-    // Create full prompt with system instructions + history + new message
-    const fullPrompt = `${SYSTEM_PROMPT}
+    // Create full prompt with system instructions + knowledge + history + message
+    const fullPrompt = `${SYSTEM_PROMPT}${knowledgeContext}
 
 Previous conversation:
 ${conversationContext || "No previous messages"}
@@ -94,6 +122,10 @@ User: ${message}
       response: responseText,
       sessionId,
       timestamp: new Date().toISOString(),
+      context: {
+        knowledgeBaseUsed: knowledgeContext.length > 0,
+        // eventContextUsed: eventContext.length > 0, // For future event integration
+      },
     });
   } catch (error) {
     console.error(`❌ Error in chat:`, error);

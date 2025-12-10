@@ -1,3 +1,14 @@
 {
-  "documents": []
+  "documents": [
+    {
+      "id": "1127566c-2512-41ed-b052-8fa3142f19b2",
+      "type": "url",
+      "title": "Adobe Assurance Overview",
+      "url": "https://developer.adobe.com/client-sdks/documentation/platform-assurance/",
+      "loadedAt": "2025-12-10T09:47:38.008Z",
+      "chunkCount": 7,
+      "contentLength": 5408,
+      "status": "loaded"
+    }
+  ]
 }

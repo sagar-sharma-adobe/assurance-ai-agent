@@ -113,3 +113,43 @@ export async function searchSimilarDocuments(query, k = 4) {
   return results;
 }
 
+/**
+ * Get all loaded documents metadata
+ * @returns {Array} Array of document metadata objects
+ */
+export function getLoadedDocumentsMetadata() {
+  try {
+    if (!fs.existsSync(DOCS_METADATA_FILE)) {
+      return [];
+    }
+    
+    const data = fs.readFileSync(DOCS_METADATA_FILE, 'utf8');
+    const json = JSON.parse(data);
+    return json.documents || [];
+  } catch (error) {
+    console.error('❌ Error reading documents metadata:', error);
+    return [];
+  }
+}
+
+/**
+ * Add document metadata to tracking file
+ * @param {Object} metadata - Document metadata to add
+ */
+export function addDocumentMetadata(metadata) {
+  try {
+    const documents = getLoadedDocumentsMetadata();
+    documents.push(metadata);
+    
+    fs.writeFileSync(
+      DOCS_METADATA_FILE,
+      JSON.stringify({ documents }, null, 2)
+    );
+    
+    console.log(`📝 Added document metadata: ${metadata.title}`);
+  } catch (error) {
+    console.error('❌ Error adding document metadata:', error);
+    throw error;
+  }
+}
+

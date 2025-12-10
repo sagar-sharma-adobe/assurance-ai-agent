@@ -7,6 +7,7 @@ import healthRoutes from './health.routes.js';
 import sessionRoutes from './session.routes.js';
 import chatRoutes from './chat.routes.js';
 import eventsRoutes from "./events.routes.js";
+import knowledgeRoutes from "./knowledge.routes.js";
 
 /**
  * Register all routes with the Express app
@@ -24,6 +25,9 @@ export function registerRoutes(app) {
 
   // Events endpoints (for Assurance event upload and search)
   app.use("/api/events", eventsRoutes);
+
+  // Knowledge base endpoints (RAG - document loading and search)
+  app.use("/api/knowledge", knowledgeRoutes);
 
   console.log("✅ Routes registered");
 }
