@@ -94,6 +94,33 @@ curl -X POST http://localhost:3001/api/knowledge/load-url \
   -d '{"url": "https://example.com/docs", "title": "My Doc"}'
 ```
 
+### 🔄 Repopulating the Knowledge Base
+
+The complete list of URLs is saved in `docs/knowledge-base-urls.json`. Use this to rebuild the knowledge base from scratch:
+
+```bash
+# Populate entire knowledge base from URL list
+npm run kb:populate
+
+# Populate with custom batch size and delay
+node scripts/populate-knowledge-base.js --batch-size=5 --delay=3000
+
+# Populate specific categories only
+node scripts/populate-knowledge-base.js --categories="XDM Schemas,Edge Network"
+
+# Force update existing documents
+npm run kb:populate -- --force
+
+# Export current URLs to file
+npm run kb:export
+```
+
+**When to use:**
+- ✅ Setting up a fresh ChromaDB instance
+- ✅ Sharing the project with team members
+- ✅ Recovering from data loss
+- ✅ Rebuilding after major updates
+
 ---
 
 ## 🚀 Core Features
