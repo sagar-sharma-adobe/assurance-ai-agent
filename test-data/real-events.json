@@ -1,0 +1,142 @@
+[
+  {
+    "uuid": "56e05ab5-4d01-4c9c-9b4d-bdeb4e5ddce8",
+    "timestamp": 1733852887367,
+    "eventNumber": 1,
+    "vendor": "com.adobe.griffon.mobile",
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "state": {
+          "assuranceEnvironment": "prod",
+          "assuranceSessionURL": "assurance://?adb_validation_sessionid=5bfbadc2-d3f0-4d32-aefc-f6ff09aaf13a",
+          "clientId": "3a7f7bc7-5e02-4c6e-8506-e4ece0ccda8e"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.sharedstate",
+      "ACPExtensionEventType": "com.adobe.eventtype.hub",
+      "ACPExtensionEventName": "Shared state change",
+      "ACPExtensionEventNumber": 1,
+      "ACPExtensionEventUniqueIdentifier": "56e05ab5-4d01-4c9c-9b4d-bdeb4e5ddce8"
+    }
+  },
+  {
+    "uuid": "dca07853-f06b-45d3-9e03-69e82e8b0f89",
+    "timestamp": 1733852887391,
+    "eventNumber": 2,
+    "vendor": "com.adobe.griffon.mobile",
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "state": {
+          "version": "3.2.1",
+          "wrapper": {
+            "type": "R"
+          }
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.sharedstate",
+      "ACPExtensionEventType": "com.adobe.eventtype.hub",
+      "ACPExtensionEventName": "Shared state change",
+      "ACPExtensionEventNumber": 2,
+      "ACPExtensionEventUniqueIdentifier": "dca07853-f06b-45d3-9e03-69e82e8b0f89"
+    }
+  },
+  {
+    "uuid": "8dcef0cf-8a93-4a71-8e8d-04cfbb60b7c0",
+    "timestamp": 1733852887416,
+    "eventNumber": 3,
+    "vendor": "com.adobe.griffon.mobile",
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "extensions": {
+          "com.adobe.module.lifecycle": {
+            "version": "3.0.0",
+            "friendlyName": "Lifecycle"
+          },
+          "com.adobe.griffon.mobile": {
+            "version": "3.2.1",
+            "friendlyName": "AEPAssurance"
+          },
+          "com.adobe.marketing.mobile.UserProfile": {
+            "version": "3.0.0",
+            "friendlyName": "UserProfile"
+          },
+          "com.adobe.marketing.mobile.Identity": {
+            "version": "3.0.0",
+            "friendlyName": "Identity"
+          },
+          "com.adobe.module.eventhub": {
+            "version": "3.0.0",
+            "friendlyName": "EventHub"
+          },
+          "com.adobe.marketing.mobile.Signal": {
+            "version": "3.0.0",
+            "friendlyName": "Signal"
+          }
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.sharedstate",
+      "ACPExtensionEventType": "com.adobe.eventtype.hub",
+      "ACPExtensionEventName": "Shared state change",
+      "ACPExtensionEventNumber": 3,
+      "ACPExtensionEventUniqueIdentifier": "8dcef0cf-8a93-4a71-8e8d-04cfbb60b7c0"
+    }
+  },
+  {
+    "uuid": "8aa41f9e-9370-4ef9-9889-49f2308a33c5",
+    "timestamp": 1733852887422,
+    "eventNumber": 4,
+    "vendor": "com.adobe.griffon.mobile",
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "state": {
+          "version": "3.0.0",
+          "mid": "68690885822939138271572788346851774372",
+          "blob": "j8Odv6LonN4r3an7LhD3aoLr1",
+          "locationhint": "9",
+          "advertisingidentifier": "00000000-0000-0000-0000-000000000000",
+          "pushidentifier": "null"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.sharedstate",
+      "ACPExtensionEventType": "com.adobe.eventtype.hub",
+      "ACPExtensionEventName": "Shared state change",
+      "ACPExtensionEventNumber": 4,
+      "ACPExtensionEventUniqueIdentifier": "8aa41f9e-9370-4ef9-9889-49f2308a33c5"
+    }
+  },
+  {
+    "uuid": "fe71c515-4ab4-44fd-ae86-6d4c34b48b67",
+    "timestamp": 1733852887426,
+    "eventNumber": 5,
+    "vendor": "com.adobe.griffon.mobile",
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "startsessionevent": true,
+        "maxsessionlength": 3600,
+        "contextdata": {
+          "DayOfWeek": "3",
+          "HourOfDay": "3",
+          "OSVersion": "iOS 17.5.1",
+          "AppId": "AEPSampleApp 1.0 (1)",
+          "Resolution": "430x932",
+          "DeviceName": "iPhone15,3",
+          "RunMode": "Application",
+          "Launches": "21",
+          "LaunchEvent": "LaunchEvent"
+        },
+        "lifecyclesharedstateid": "fe71c515-4ab4-44fd-ae86-6d4c34b48b67"
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.lifecycle",
+      "ACPExtensionEventName": "LifecycleStart",
+      "ACPExtensionEventNumber": 5,
+      "ACPExtensionEventUniqueIdentifier": "fe71c515-4ab4-44fd-ae86-6d4c34b48b67"
+    }
+  }
+]
+

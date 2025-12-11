@@ -1,0 +1,950 @@
+[
+  {
+    "uuid": "56e05ab5-4d01-4c9c-9b4d-bdeb4e5ddce8",
+    "timestamp": 1733852887367,
+    "eventNumber": 1,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "state": {
+          "assuranceEnvironment": "prod",
+          "assuranceSessionURL": "assurance://?adb_validation_sessionid=5bfbadc2-d3f0-4d32-aefc-f6ff09aaf13a",
+          "clientId": "3a7f7bc7-5e02-4c6e-8506-e4ece0ccda8e"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.sharedstate",
+      "ACPExtensionEventType": "com.adobe.eventtype.hub",
+      "ACPExtensionEventName": "Shared state change"
+    }
+  },
+  {
+    "uuid": "dca07853-f06b-45d3-9e03-69e82e8b0f89",
+    "timestamp": 1733852887391,
+    "eventNumber": 2,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "state": {
+          "version": "3.2.1",
+          "wrapper": {"type": "R"}
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.sharedstate",
+      "ACPExtensionEventType": "com.adobe.eventtype.hub",
+      "ACPExtensionEventName": "Shared state change"
+    }
+  },
+  {
+    "uuid": "8dcef0cf-8a93-4a71-8e8d-04cfbb60b7c0",
+    "timestamp": 1733852887416,
+    "eventNumber": 3,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "extensions": {
+          "com.adobe.module.lifecycle": {"version": "3.0.0", "friendlyName": "Lifecycle"},
+          "com.adobe.griffon.mobile": {"version": "3.2.1", "friendlyName": "AEPAssurance"},
+          "com.adobe.marketing.mobile.UserProfile": {"version": "3.0.0", "friendlyName": "UserProfile"},
+          "com.adobe.marketing.mobile.Identity": {"version": "3.0.0", "friendlyName": "Identity"}
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.sharedstate",
+      "ACPExtensionEventType": "com.adobe.eventtype.hub",
+      "ACPExtensionEventName": "Shared state change"
+    }
+  },
+  {
+    "uuid": "8aa41f9e-9370-4ef9-9889-49f2308a33c5",
+    "timestamp": 1733852887422,
+    "eventNumber": 4,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "state": {
+          "version": "3.0.0",
+          "mid": "68690885822939138271572788346851774372",
+          "blob": "j8Odv6LonN4r3an7LhD3aoLr1",
+          "locationhint": "9"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.sharedstate",
+      "ACPExtensionEventType": "com.adobe.eventtype.hub",
+      "ACPExtensionEventName": "Shared state change"
+    }
+  },
+  {
+    "uuid": "fe71c515-4ab4-44fd-ae86-6d4c34b48b67",
+    "timestamp": 1733852887426,
+    "eventNumber": 5,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "startsessionevent": true,
+        "maxsessionlength": 3600,
+        "contextdata": {
+          "DayOfWeek": "3",
+          "HourOfDay": "3",
+          "OSVersion": "iOS 17.5.1",
+          "AppId": "AEPSampleApp 1.0 (1)",
+          "DeviceName": "iPhone15,3",
+          "Launches": "21"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.lifecycle",
+      "ACPExtensionEventName": "LifecycleStart"
+    }
+  },
+  {
+    "uuid": "analytics-001",
+    "timestamp": 1733852887500,
+    "eventNumber": 6,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackState",
+        "contextdata": {
+          "a.AppID": "AEPSampleApp 1.0",
+          "a.action": "HomeScreen"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "analytics-002",
+    "timestamp": 1733852888000,
+    "eventNumber": 7,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackAction",
+        "contextdata": {
+          "product": "Running Shoes",
+          "price": "89.99",
+          "action": "ProductView"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "analytics-003",
+    "timestamp": 1733852888500,
+    "eventNumber": 8,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackAction",
+        "contextdata": {
+          "product": "Running Shoes",
+          "price": "89.99",
+          "action": "AddToCart",
+          "cartId": "cart-12345"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "network-001",
+    "timestamp": 1733852889000,
+    "eventNumber": 9,
+    "type": "service",
+    "payload": {
+      "ACPExtensionEventData": {
+        "url": "https://api.example.com/products/12345",
+        "method": "GET",
+        "responseCode": 200,
+        "responseTime": 250
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.responsecontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.edge",
+      "ACPExtensionEventName": "EdgeRequest"
+    }
+  },
+  {
+    "uuid": "network-002",
+    "timestamp": 1733852889500,
+    "eventNumber": 10,
+    "type": "service",
+    "payload": {
+      "ACPExtensionEventData": {
+        "url": "https://api.example.com/cart",
+        "method": "POST",
+        "responseCode": 201,
+        "responseTime": 180
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.responsecontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.edge",
+      "ACPExtensionEventName": "EdgeRequest"
+    }
+  },
+  {
+    "uuid": "analytics-004",
+    "timestamp": 1733852890000,
+    "eventNumber": 11,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackState",
+        "contextdata": {
+          "screen": "CheckoutScreen",
+          "cartValue": "89.99"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "analytics-005",
+    "timestamp": 1733852890500,
+    "eventNumber": 12,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackAction",
+        "contextdata": {
+          "action": "PurchaseComplete",
+          "orderId": "ORD-98765",
+          "totalAmount": "89.99",
+          "currency": "USD"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "lifecycle-002",
+    "timestamp": 1733852891000,
+    "eventNumber": 13,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "contextdata": {
+          "sessionLength": "120",
+          "prevSessionLength": "95"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.responsecontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.lifecycle",
+      "ACPExtensionEventName": "LifecyclePause"
+    }
+  },
+  {
+    "uuid": "error-001",
+    "timestamp": 1733852891500,
+    "eventNumber": 14,
+    "type": "generic",
+    "payload": {
+      "ACPExtensionEventData": {
+        "error": "NetworkTimeout",
+        "message": "Request timeout after 30 seconds",
+        "endpoint": "https://api.example.com/analytics"
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.errorcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.error",
+      "ACPExtensionEventName": "ErrorEvent"
+    }
+  },
+  {
+    "uuid": "analytics-006",
+    "timestamp": 1733852892000,
+    "eventNumber": 15,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackAction",
+        "contextdata": {
+          "action": "SearchPerformed",
+          "searchTerm": "running shoes",
+          "resultsCount": "24"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "analytics-007",
+    "timestamp": 1733852892500,
+    "eventNumber": 16,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackState",
+        "contextdata": {
+          "screen": "SearchResults",
+          "query": "running shoes"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "analytics-008",
+    "timestamp": 1733852893000,
+    "eventNumber": 17,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackAction",
+        "contextdata": {
+          "product": "Trail Running Shoes",
+          "price": "129.99",
+          "action": "ProductView"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "network-003",
+    "timestamp": 1733852893500,
+    "eventNumber": 18,
+    "type": "service",
+    "payload": {
+      "ACPExtensionEventData": {
+        "url": "https://api.example.com/products/search",
+        "method": "GET",
+        "responseCode": 200,
+        "responseTime": 320
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.responsecontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.edge",
+      "ACPExtensionEventName": "EdgeRequest"
+    }
+  },
+  {
+    "uuid": "analytics-009",
+    "timestamp": 1733852894000,
+    "eventNumber": 19,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackAction",
+        "contextdata": {
+          "action": "FilterApplied",
+          "filterType": "price",
+          "filterValue": "50-100"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "analytics-010",
+    "timestamp": 1733852894500,
+    "eventNumber": 20,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackState",
+        "contextdata": {
+          "screen": "ProductDetails",
+          "productId": "PROD-456"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "user-profile-001",
+    "timestamp": 1733852895000,
+    "eventNumber": 21,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "attributes": {
+          "userId": "user-12345",
+          "email": "user@example.com",
+          "membershipTier": "gold"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.userprofile",
+      "ACPExtensionEventName": "UserProfileUpdate"
+    }
+  },
+  {
+    "uuid": "analytics-011",
+    "timestamp": 1733852895500,
+    "eventNumber": 22,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackAction",
+        "contextdata": {
+          "action": "WishlistAdd",
+          "productId": "PROD-456",
+          "productName": "Trail Running Shoes"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "network-004",
+    "timestamp": 1733852896000,
+    "eventNumber": 23,
+    "type": "service",
+    "payload": {
+      "ACPExtensionEventData": {
+        "url": "https://api.example.com/wishlist",
+        "method": "POST",
+        "responseCode": 200,
+        "responseTime": 150
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.responsecontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.edge",
+      "ACPExtensionEventName": "EdgeRequest"
+    }
+  },
+  {
+    "uuid": "analytics-012",
+    "timestamp": 1733852896500,
+    "eventNumber": 24,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackState",
+        "contextdata": {
+          "screen": "WishlistScreen",
+          "itemCount": "3"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "analytics-013",
+    "timestamp": 1733852897000,
+    "eventNumber": 25,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackAction",
+        "contextdata": {
+          "action": "ShareProduct",
+          "method": "email",
+          "productId": "PROD-456"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "analytics-014",
+    "timestamp": 1733852897500,
+    "eventNumber": 26,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackState",
+        "contextdata": {
+          "screen": "ReviewsScreen",
+          "productId": "PROD-456",
+          "reviewCount": "42"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "analytics-015",
+    "timestamp": 1733852898000,
+    "eventNumber": 27,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackAction",
+        "contextdata": {
+          "action": "ReviewSubmitted",
+          "rating": "5",
+          "hasComment": "true"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "network-005",
+    "timestamp": 1733852898500,
+    "eventNumber": 28,
+    "type": "service",
+    "payload": {
+      "ACPExtensionEventData": {
+        "url": "https://api.example.com/reviews",
+        "method": "POST",
+        "responseCode": 201,
+        "responseTime": 280
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.responsecontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.edge",
+      "ACPExtensionEventName": "EdgeRequest"
+    }
+  },
+  {
+    "uuid": "analytics-016",
+    "timestamp": 1733852899000,
+    "eventNumber": 29,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackState",
+        "contextdata": {
+          "screen": "ProfileScreen",
+          "section": "orders"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "analytics-017",
+    "timestamp": 1733852899500,
+    "eventNumber": 30,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackAction",
+        "contextdata": {
+          "action": "OrderTracked",
+          "orderId": "ORD-98765",
+          "status": "shipped"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "network-006",
+    "timestamp": 1733852900000,
+    "eventNumber": 31,
+    "type": "service",
+    "payload": {
+      "ACPExtensionEventData": {
+        "url": "https://api.example.com/orders/ORD-98765",
+        "method": "GET",
+        "responseCode": 200,
+        "responseTime": 190
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.responsecontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.edge",
+      "ACPExtensionEventName": "EdgeRequest"
+    }
+  },
+  {
+    "uuid": "analytics-018",
+    "timestamp": 1733852900500,
+    "eventNumber": 32,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackState",
+        "contextdata": {
+          "screen": "NotificationsScreen",
+          "unreadCount": "5"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "analytics-019",
+    "timestamp": 1733852901000,
+    "eventNumber": 33,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackAction",
+        "contextdata": {
+          "action": "NotificationOpened",
+          "notificationType": "promotion",
+          "notificationId": "NOTIF-123"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "analytics-020",
+    "timestamp": 1733852901500,
+    "eventNumber": 34,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackState",
+        "contextdata": {
+          "screen": "PromoScreen",
+          "promoCode": "SAVE20",
+          "discount": "20%"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "analytics-021",
+    "timestamp": 1733852902000,
+    "eventNumber": 35,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackAction",
+        "contextdata": {
+          "action": "PromoCodeApplied",
+          "promoCode": "SAVE20",
+          "discountAmount": "17.99"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "network-007",
+    "timestamp": 1733852902500,
+    "eventNumber": 36,
+    "type": "service",
+    "payload": {
+      "ACPExtensionEventData": {
+        "url": "https://api.example.com/promo/validate",
+        "method": "POST",
+        "responseCode": 200,
+        "responseTime": 140
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.responsecontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.edge",
+      "ACPExtensionEventName": "EdgeRequest"
+    }
+  },
+  {
+    "uuid": "analytics-022",
+    "timestamp": 1733852903000,
+    "eventNumber": 37,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackState",
+        "contextdata": {
+          "screen": "SettingsScreen",
+          "section": "notifications"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "analytics-023",
+    "timestamp": 1733852903500,
+    "eventNumber": 38,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackAction",
+        "contextdata": {
+          "action": "SettingChanged",
+          "setting": "pushNotifications",
+          "value": "enabled"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "user-profile-002",
+    "timestamp": 1733852904000,
+    "eventNumber": 39,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "attributes": {
+          "pushEnabled": true,
+          "emailEnabled": true,
+          "theme": "dark"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.userprofile",
+      "ACPExtensionEventName": "UserProfileUpdate"
+    }
+  },
+  {
+    "uuid": "analytics-024",
+    "timestamp": 1733852904500,
+    "eventNumber": 40,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackState",
+        "contextdata": {
+          "screen": "HelpScreen",
+          "category": "faq"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "analytics-025",
+    "timestamp": 1733852905000,
+    "eventNumber": 41,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackAction",
+        "contextdata": {
+          "action": "HelpArticleViewed",
+          "articleId": "FAQ-100",
+          "category": "shipping"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "analytics-026",
+    "timestamp": 1733852905500,
+    "eventNumber": 42,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackAction",
+        "contextdata": {
+          "action": "SupportChatOpened",
+          "department": "customerService"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "network-008",
+    "timestamp": 1733852906000,
+    "eventNumber": 43,
+    "type": "service",
+    "payload": {
+      "ACPExtensionEventData": {
+        "url": "https://api.example.com/support/chat/init",
+        "method": "POST",
+        "responseCode": 200,
+        "responseTime": 220
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.responsecontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.edge",
+      "ACPExtensionEventName": "EdgeRequest"
+    }
+  },
+  {
+    "uuid": "analytics-027",
+    "timestamp": 1733852906500,
+    "eventNumber": 44,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackState",
+        "contextdata": {
+          "screen": "ChatScreen",
+          "agentName": "Sarah"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "analytics-028",
+    "timestamp": 1733852907000,
+    "eventNumber": 45,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackAction",
+        "contextdata": {
+          "action": "MessageSent",
+          "messageLength": "50",
+          "containsImage": "false"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "analytics-029",
+    "timestamp": 1733852907500,
+    "eventNumber": 46,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackAction",
+        "contextdata": {
+          "action": "ChatEnded",
+          "duration": "180",
+          "resolved": "true"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "analytics-030",
+    "timestamp": 1733852908000,
+    "eventNumber": 47,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackAction",
+        "contextdata": {
+          "action": "FeedbackSubmitted",
+          "rating": "5",
+          "category": "support"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "network-009",
+    "timestamp": 1733852908500,
+    "eventNumber": 48,
+    "type": "service",
+    "payload": {
+      "ACPExtensionEventData": {
+        "url": "https://api.example.com/feedback",
+        "method": "POST",
+        "responseCode": 201,
+        "responseTime": 160
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.responsecontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.edge",
+      "ACPExtensionEventName": "EdgeRequest"
+    }
+  },
+  {
+    "uuid": "lifecycle-003",
+    "timestamp": 1733852909000,
+    "eventNumber": 49,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "contextdata": {
+          "sessionLength": "240",
+          "actionsPerformed": "18"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.responsecontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.lifecycle",
+      "ACPExtensionEventName": "LifecyclePause"
+    }
+  },
+  {
+    "uuid": "analytics-031",
+    "timestamp": 1733852909500,
+    "eventNumber": 50,
+    "type": "client",
+    "payload": {
+      "ACPExtensionEventData": {
+        "action": "trackState",
+        "contextdata": {
+          "screen": "ExitScreen",
+          "sessionComplete": "true"
+        }
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.requestcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.analytics",
+      "ACPExtensionEventName": "AnalyticsTrack"
+    }
+  },
+  {
+    "uuid": "error-002",
+    "timestamp": 1733852910000,
+    "eventNumber": 51,
+    "type": "generic",
+    "payload": {
+      "ACPExtensionEventData": {
+        "error": "MemoryWarning",
+        "message": "App received memory warning",
+        "level": "warning"
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.errorcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.error",
+      "ACPExtensionEventName": "ErrorEvent"
+    }
+  },
+  {
+    "uuid": "error-003",
+    "timestamp": 1733852910500,
+    "eventNumber": 52,
+    "type": "generic",
+    "payload": {
+      "ACPExtensionEventData": {
+        "error": "AppCrash",
+        "message": "Application crashed due to memory overflow",
+        "stackTrace": "at ViewController.swift:142",
+        "level": "critical"
+      },
+      "ACPExtensionEventSource": "com.adobe.eventsource.errorcontent",
+      "ACPExtensionEventType": "com.adobe.eventtype.error",
+      "ACPExtensionEventName": "ErrorEvent"
+    }
+  }
+]
+
