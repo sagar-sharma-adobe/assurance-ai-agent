@@ -1,0 +1,165 @@
+---
+description: "Event Embedding Pipeline - Architecture and Implementation Plan"
+alwaysApply: true
+---
+
+# Event Embedding Pipeline Implementation
+
+## Current State Assessment
+
+### ✅ What Works
+1. **Event Upload Route** (`/api/events/upload`)
+   - Accepts chunked event uploads
+   - Creates embeddings using Ollama (nomic-embed-text)
+   - Stores in **HNSWLib** per-session vector stores
+   - Location: `src/routes/events.routes.js`
+
+2. **Knowledge Base RAG** (ChromaDB)
+   - Global documentation stored in ChromaDB
+   - Chat endpoint uses ChromaDB for context retrieval
+   - Location: `src/services/vectorStore.js`
+
+3. **Session Management**
+   - Tracks per-session event vector stores
+   - Maintains conversation history
+   - Location: `src/services/sessionManager.js`
+
+### ❌ The Gap
+- **Events are NOT used in chat responses**
+- Line 86-92 in `src/routes/chat.routes.js` is commented out (TODO)
+- User uploads events but AI doesn't reference them
+
+## Architecture Decision
+
+### Current: Dual Vector Store System
+- **ChromaDB**: Global knowledge base (docs, guides)
+- **HNSWLib**: Per-session events (isolated, ephemeral)
+
+### Why This Design?
+1. **Separation of Concerns**: Global knowledge vs session-specific events
+2. **Performance**: HNSWLib is fast for in-memory search
+3. **Isolation**: Each session's events don't pollute others
+4. **Cleanup**: Easy to delete session data (just delete folder)
+
+### Alternative: ChromaDB for Everything
+- **Pros**: Single system, consistent API
+- **Cons**: Need per-session collections, harder cleanup, ChromaDB restart loses sessions
+
+**DECISION**: Keep current architecture, just enable the integration
+
+## Implementation Plan
+
+### Phase 1: Enable Event Context in Chat (Core Feature)
+**Goal**: Use uploaded events in AI responses
+
+**Changes Required**:
+1. Uncomment event context retrieval in `chat.routes.js` (lines 86-92)
+2. Add event formatting for LLM context
+3. Test with real events
+
+**Testable Checkpoint**: Upload events → Ask about them → Get relevant responses
+
+### Phase 2: Optimize for Large Events (Scalability)
+**Goal**: Handle real-world event payloads without hitting limits
+
+**Known Issues**:
+- Ollama embedding model: 2048 token context limit
+- Large event payloads (10k+ chars) exceed this
+- Need truncation strategy
+
+**Changes Required**:
+1. Truncate event payloads before embedding (keep metadata intact)
+2. Add configurable `MAX_PAYLOAD_CHARS` constant
+3. Log truncation for debugging
+
+**Testable Checkpoint**: Upload 100 events including large ones → No errors
+
+### Phase 3: ChromaDB for Events (Optional Enhancement)
+**Goal**: Migrate from HNSWLib to ChromaDB for consistency
+
+**Why Later?**:
+- Not required for functionality
+- More complex (session isolation in ChromaDB)
+- Current system works well
+
+**Changes Required**:
+1. Create per-session ChromaDB collections
+2. Migrate `eventVectorStore.js` to use Chroma client
+3. Update session cleanup logic
+
+## Implementation Rules
+
+### 1. Test After Each Change
+```bash
+# Start backend
+npm start
+
+# Test upload
+curl -X POST http://localhost:3001/api/events/upload \
+  -H "Content-Type: application/json" \
+  -d '{"sessionId":"xxx","events":[...]}'
+
+# Test chat
+curl -X POST http://localhost:3001/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"sessionId":"xxx","message":"What events happened?"}'
+```
+
+### 2. Incremental Changes
+- One phase at a time
+- Commit after each working phase
+- Don't mix concerns
+
+### 3. Preserve Existing Functionality
+- Don't break knowledge base RAG
+- Don't break session management
+- Add event context, don't replace anything
+
+### 4. Error Handling
+- Graceful degradation if event search fails
+- Continue without event context rather than crash
+- Log warnings, not errors
+
+## Key Files
+
+| File | Purpose | Phase |
+|------|---------|-------|
+| `src/routes/chat.routes.js` | Enable event context | Phase 1 |
+| `src/services/eventVectorStore.js` | Add payload truncation | Phase 2 |
+| `src/config/constants.js` | Add truncation config | Phase 2 |
+| `src/services/eventVectorStore.js` | Migrate to ChromaDB | Phase 3 |
+
+## Success Criteria
+
+### Phase 1 Complete When:
+- [ ] User uploads events via frontend
+- [ ] Events stored with embeddings
+- [ ] Chat queries return event-aware responses
+- [ ] Frontend shows "Event context used: true"
+
+### Phase 2 Complete When:
+- [ ] Upload 100+ events with large payloads
+- [ ] No "context length exceeded" errors
+- [ ] Embeddings complete within 60s
+- [ ] Truncation logged for debugging
+
+### Phase 3 Complete When:
+- [ ] Events stored in ChromaDB collections
+- [ ] Session cleanup removes ChromaDB collections
+- [ ] Performance matches HNSWLib
+- [ ] All existing tests pass
+
+## Rollback Plan
+
+If any phase fails:
+```bash
+# Revert changes
+git restore src/routes/chat.routes.js src/services/eventVectorStore.js src/config/constants.js
+
+# Restart server
+npm start
+```
+
+## Next Steps
+
+**Start with Phase 1** - Enable event context in chat (simplest, highest value)

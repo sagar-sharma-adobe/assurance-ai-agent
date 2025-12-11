@@ -116,15 +116,31 @@ export async function addEventsToVectorStore(
       const batch = events.slice(i, i + batchSize);
 
       // Format batch events as searchable text
-      // TODO: Team can customize this based on event structure
+      // Truncate payloads to stay within embedding model's 2048 token limit
+      // Real Assurance events (especially in-app messages) can have HUGE HTML/CSS/JS payloads
+      const MAX_PAYLOAD_CHARS = 400; // ~100 tokens per event (safe for even extreme cases)
+      let truncatedCount = 0;
+      
       const eventTexts = batch.map((event) => {
+        const payloadStr = JSON.stringify(event.payload || {}, null, 2);
+        const isTruncated = payloadStr.length > MAX_PAYLOAD_CHARS;
+        if (isTruncated) truncatedCount++;
+        
+        const truncatedPayload = isTruncated
+          ? payloadStr.substring(0, MAX_PAYLOAD_CHARS) + '\n... [truncated]'
+          : payloadStr;
+
         return `
 Event Type: ${event.type || "unknown"}
 Event Name: ${event.name || "unnamed"}
 Timestamp: ${event.timestamp || "unknown"}
-Payload: ${JSON.stringify(event.payload || {}, null, 2)}
+Payload: ${truncatedPayload}
         `.trim();
       });
+
+      if (truncatedCount > 0) {
+        console.log(`   ✂️  Truncated ${truncatedCount}/${batch.length} events (large payloads)`);
+      }
 
       const metadata = batch.map((event) => ({
         eventId: event.id || event.eventId,

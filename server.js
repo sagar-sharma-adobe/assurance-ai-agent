@@ -6,6 +6,7 @@
 import dotenv from 'dotenv';
 import { createApp } from './src/app.js';
 import { initializeVectorStore } from './src/services/vectorStore.js';
+import { warmupEmbeddingModel } from './src/config/ollama.js';
 import { PORT, OLLAMA_MODEL, OLLAMA_EMBEDDING_MODEL } from './src/config/constants.js';
 
 // Load environment variables
@@ -24,10 +25,13 @@ async function startServer() {
     // Step 1: Initialize vector store for knowledge base
     await initializeVectorStore();
 
-    // Step 2: Create and configure Express app
+    // Step 2: Warm up embedding model (avoids 35s delay on first upload)
+    await warmupEmbeddingModel();
+
+    // Step 3: Create and configure Express app
     const app = createApp();
 
-    // Step 3: Start listening
+    // Step 4: Start listening
     app.listen(PORT, () => {
       console.log("🚀 Adobe Assurance AI Agent Server");
       console.log(`📡 Server running on http://localhost:${PORT}`);

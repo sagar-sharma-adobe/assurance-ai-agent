@@ -39,3 +39,23 @@ export function createEmbeddings() {
 export const llm = createLLM();
 export const embeddings = createEmbeddings();
 
+/**
+ * Warm up the embedding model to avoid cold start delay (35s) on first request
+ * This runs asynchronously on server startup
+ */
+export async function warmupEmbeddingModel() {
+  try {
+    console.log(`🔥 Warming up embedding model: ${OLLAMA_EMBEDDING_MODEL}...`);
+    const startTime = Date.now();
+    
+    // Make a dummy embedding request to load the model into memory
+    await embeddings.embedQuery("warmup");
+    
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+    console.log(`   ✅ Embedding model ready (${duration}s)`);
+  } catch (error) {
+    console.warn(`   ⚠️  Failed to warm up embedding model:`, error.message);
+    console.warn(`   First embedding request will take ~30s to load model`);
+  }
+}
+
