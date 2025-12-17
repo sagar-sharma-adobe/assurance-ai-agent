@@ -38,4 +38,4 @@ Provide clear, actionable answers and always consider the context of mobile app 
 // Event Upload Configuration (Chunked Upload Architecture)
 export const EVENT_UPLOAD_CHUNK_SIZE = 100; // Recommended chunk size for client uploads
 export const MAX_EVENTS_PER_REQUEST = 200; // Hard limit per request (prevents abuse)
-export const EMBEDDING_BATCH_SIZE = 3; // Small batches for large Assurance event payloads (2048 token limit)
+export const EMBEDDING_BATCH_SIZE = 10; // Small batches for large Assurance event payloads (2048 token limit)

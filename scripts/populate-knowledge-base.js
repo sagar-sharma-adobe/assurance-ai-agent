@@ -6,14 +6,17 @@
  * Loads all URLs from docs/knowledge-base-urls.json into the knowledge base.
  * Useful for setting up a fresh ChromaDB instance or recovering from data loss.
  * 
+ * IMPORTANT: Processes documents sequentially to avoid overwhelming ChromaDB.
+ * 
  * Usage:
- *   node scripts/populate-knowledge-base.js [--batch-size=10] [--delay=2000]
+ *   node scripts/populate-knowledge-base.js [options]
  * 
  * Options:
- *   --batch-size  Number of URLs to load per batch (default: 10)
- *   --delay       Delay in ms between batches (default: 2000)
- *   --force       Force update even if URL already exists
- *   --categories  Comma-separated list of categories to load
+ *   --batch-size   Number of URLs to load per batch (default: 5)
+ *   --delay        Delay in ms between batches (default: 2000)
+ *   --doc-delay    Delay in ms between documents within a batch (default: 500)
+ *   --force        Force update even if URL already exists
+ *   --categories   Comma-separated list of categories to load
  */
 
 import fs from 'fs';
@@ -26,8 +29,9 @@ const __dirname = path.dirname(__filename);
 // Parse command line arguments
 const args = process.argv.slice(2);
 const config = {
-  batchSize: 10,
-  delay: 2000,
+  batchSize: 5, // Reduced from 10 to avoid overwhelming ChromaDB
+  delay: 2000, // Delay between batches
+  docDelay: 500, // Delay between individual documents in a batch
   force: false,
   categories: null,
 };
@@ -37,6 +41,8 @@ for (const arg of args) {
     config.batchSize = parseInt(arg.split('=')[1]);
   } else if (arg.startsWith('--delay=')) {
     config.delay = parseInt(arg.split('=')[1]);
+  } else if (arg.startsWith('--doc-delay=')) {
+    config.docDelay = parseInt(arg.split('=')[1]);
   } else if (arg === '--force') {
     config.force = true;
   } else if (arg.startsWith('--categories=')) {
@@ -61,12 +67,12 @@ function log(message, color = 'reset') {
   console.log(`${colors[color]}${message}${colors.reset}`);
 }
 
-async function loadBatch(urls, forceUpdate = false) {
+async function loadBatch(urls, forceUpdate = false, delayMs = 500) {
   try {
     const response = await fetch(`${SERVER_URL}/api/knowledge/load-batch`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ urls, forceUpdate }),
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ urls, forceUpdate, delayMs }),
     });
 
     if (!response.ok) {
@@ -75,7 +81,7 @@ async function loadBatch(urls, forceUpdate = false) {
 
     return await response.json();
   } catch (error) {
-    log(`❌ Batch load failed: ${error.message}`, 'red');
+    log(`❌ Batch load failed: ${error.message}`, "red");
     return { success: false, error: error.message };
   }
 }
@@ -142,6 +148,7 @@ async function main() {
   log(`   Batch size: ${config.batchSize}`, 'blue');
   log(`   Total batches: ${batches.length}`, 'blue');
   log(`   Delay between batches: ${config.delay}ms`, 'blue');
+  log(`   Delay between documents: ${config.docDelay}ms`, "blue");
   log(`   Force update: ${config.force}`, 'blue');
   log('');
 
@@ -155,7 +162,7 @@ async function main() {
 
     log(`\n📦 Batch ${batchNum}/${batches.length} (${batch.length} URLs)`, 'cyan');
 
-    const result = await loadBatch(batch, config.force);
+    const result = await loadBatch(batch, config.force, config.docDelay);
 
     if (result.success && result.results) {
       totalSuccess += result.results.successCount;

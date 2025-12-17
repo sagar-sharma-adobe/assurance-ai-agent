@@ -244,13 +244,13 @@ router.get('/:sessionId', (req, res) => {
  * 
  * Body: { sessionId: string, query: string, limit?: number }
  */
-router.post('/search', async (req, res) => {
-  const { sessionId, query, limit = 5 } = req.body;
+router.post("/search", async (req, res) => {
+  const { sessionId, query, k = 5 } = req.body;
 
   if (!sessionId || !query) {
     return res.status(400).json({
       success: false,
-      error: 'sessionId and query are required',
+      error: "sessionId and query are required",
     });
   }
 
@@ -258,27 +258,27 @@ router.post('/search', async (req, res) => {
   if (!session) {
     return res.status(404).json({
       success: false,
-      error: 'Session not found',
+      error: "Session not found",
     });
   }
 
   try {
     const eventVectorStore = sessionManager.getEventVectorStore(sessionId);
-    const results = await searchEvents(eventVectorStore, query, limit);
+    const results = await searchEvents(eventVectorStore, query, k);
 
     res.json({
       success: true,
       sessionId,
       query,
-      results: results.map(doc => ({
-        content: doc.pageContent,
+      results: results.map((doc) => ({
+        pageContent: doc.pageContent,
         metadata: doc.metadata,
+        rawEvent: doc.rawEvent, // Include parsed raw event
       })),
       totalResults: results.length,
     });
-    
   } catch (error) {
-    console.error('❌ Error searching events:', error);
+    console.error("❌ Error searching events:", error);
     res.status(500).json({
       success: false,
       error: error.message,
@@ -289,43 +289,40 @@ router.post('/search', async (req, res) => {
 /**
  * GET /api/events/:sessionId/stats
  * Get event statistics for a session
- * 
+ *
  * INTEGRATION POINT: Team can implement analytics here
  * - Event type distribution
  * - Error rate
  * - Timeline analysis
  * - etc.
  */
-router.get('/:sessionId/stats', async (req, res) => {
+router.get("/:sessionId/stats", async (req, res) => {
   const { sessionId } = req.params;
 
   const session = sessionManager.getSession(sessionId);
   if (!session) {
     return res.status(404).json({
       success: false,
-      error: 'Session not found',
+      error: "Session not found",
     });
   }
 
   try {
-    // TODO: Team to implement detailed analytics
-    // For now, return basic stats
-    
-    const eventVectorStore = sessionManager.getEventVectorStore(sessionId);
-    const { getEventStats } = await import('../services/eventVectorStore.js');
-    const stats = await getEventStats(eventVectorStore);
+    // Get stats from ChromaDB collection
+    const { getEventStats } = await import("../services/eventVectorStore.js");
+    const stats = await getEventStats(sessionId);
 
     res.json({
       success: true,
       sessionId,
       stats: {
-        totalEvents: session.events.length,
-        ...stats
+        rawEventsStored: session.events.length, // From memory
+        vectorStoreCount: stats.totalEvents, // From ChromaDB
+        ...stats,
       },
     });
-    
   } catch (error) {
-    console.error('❌ Error getting event stats:', error);
+    console.error("❌ Error getting event stats:", error);
     res.status(500).json({
       success: false,
       error: error.message,

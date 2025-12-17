@@ -1,34 +1,132 @@
 /**
- * Event Vector Store Service
+ * Event Vector Store Service (ChromaDB)
  * Manages per-session Assurance event embeddings for semantic search
  * 
- * PURPOSE: Store and search Assurance session events using vector embeddings
- * INTEGRATION POINT: Team members working on event analysis should extend this
+ * ARCHITECTURE:
+ * - One ChromaDB collection per session: `session_<sessionId>`
+ * - Rich metadata for filtering and relationship queries
+ * - Full event storage for display
+ * 
+ * BENEFITS over HNSWLib:
+ * - Metadata filtering (hasError, isSDKEvent, requestId, etc.)
+ * - Relationship queries (get by parentEventId, requestId)
+ * - Retrieve by ID (for story building)
+ * - Consistent with knowledge base architecture
  */
 
-import { HNSWLib } from '@langchain/community/vectorstores/hnswlib';
-import { embeddings } from '../config/ollama.js';
-import path from 'path';
-import fs from 'fs';
+import { Chroma } from "@langchain/community/vectorstores/chroma";
+import { ChromaClient } from "chromadb";
+import { embeddings } from "../config/ollama.js";
+import { CHROMA_URL } from "../config/constants.js";
+
+// Shared ChromaDB client
+let chromaClient = null;
+
+/**
+ * Get or initialize ChromaDB client
+ * @returns {ChromaClient}
+ */
+function getChromaClient() {
+  if (!chromaClient) {
+    chromaClient = new ChromaClient({ path: CHROMA_URL });
+  }
+  return chromaClient;
+}
+
+/**
+ * Generate session collection name
+ * @param {string} sessionId - Unique session identifier
+ * @returns {string} Collection name
+ */
+function getSessionCollectionName(sessionId) {
+  return `session_${sessionId}`;
+}
+
+/**
+ * Initialize ChromaDB client and cleanup old sessions on server startup
+ * Called once during server initialization
+ *
+ * @returns {Promise<void>}
+ */
+export async function initializeEventStore() {
+  try {
+    console.log("🔧 Initializing Event Store (ChromaDB)...");
+
+    const client = getChromaClient();
+
+    // Test connection
+    await client.heartbeat();
+    console.log("   ✅ Connected to ChromaDB");
+
+    // Cleanup old session collections
+    const collections = await client.listCollections();
+    const sessionCollections = collections.filter((col) =>
+      col.name.startsWith("session_")
+    );
+
+    if (sessionCollections.length > 0) {
+      console.log(
+        `   🧹 Cleaning up ${sessionCollections.length} old session collection(s)...`
+      );
+
+      for (const collection of sessionCollections) {
+        try {
+          await client.deleteCollection({ name: collection.name });
+          console.log(`      ✓ Deleted: ${collection.name}`);
+        } catch (error) {
+          console.warn(
+            `      ⚠️  Failed to delete ${collection.name}:`,
+            error.message
+          );
+        }
+      }
+
+      console.log("   ✅ Session cleanup complete");
+    } else {
+      console.log("   ℹ️  No old session collections to clean up");
+    }
+
+    console.log("   ✨ Event store ready!");
+  } catch (error) {
+    console.error("❌ Failed to initialize event store:", error);
+    throw error;
+  }
+}
 
 /**
  * Create a new event vector store for a session
  * 
  * @param {string} sessionId - Unique session identifier
- * @returns {Promise<HNSWLib>} Initialized vector store for events
+ * @returns {Promise<Chroma>} Initialized vector store for events
  */
 export async function createEventVectorStore(sessionId) {
   try {
-    // Create empty vector store with initialization document
-    const vectorStore = await HNSWLib.fromTexts(
-      ['Session initialized - events will be added here'],
-      [{ source: 'init', sessionId }],
-      embeddings
+    const client = getChromaClient();
+    const collectionName = getSessionCollectionName(sessionId);
+
+    // Create collection with metadata
+    await client.createCollection({
+      name: collectionName,
+      metadata: {
+        type: "events",
+        sessionId,
+        createdAt: Date.now().toString(),
+      },
+    });
+
+    // Initialize LangChain Chroma vector store
+    const vectorStore = await Chroma.fromExistingCollection(embeddings, {
+      collectionName,
+      url: CHROMA_URL,
+    });
+
+    console.log(
+      `   📊 Created event vector store for session: ${sessionId.substring(
+        0,
+        8
+      )}`
     );
-    
-    console.log(`   📊 Created event vector store for session: ${sessionId.substring(0, 8)}`);
     return vectorStore;
-    
   } catch (error) {
     console.error(`❌ Failed to create event vector store:`, error);
     throw error;
@@ -36,59 +134,89 @@ export async function createEventVectorStore(sessionId) {
 }
 
 /**
- * Load existing event vector store from disk
- * 
+ * Load existing event vector store from ChromaDB
+ *
  * @param {string} sessionId - Session identifier
- * @returns {Promise<HNSWLib|null>} Loaded vector store or null if not found
+ * @returns {Promise<Chroma|null>} Loaded vector store or null if not found
  */
 export async function loadEventVectorStore(sessionId) {
-  const storePath = path.join('./vector_store/sessions', sessionId);
-  
-  if (fs.existsSync(storePath)) {
-    try {
-      const vectorStore = await HNSWLib.load(storePath, embeddings);
-      console.log(`   ✅ Loaded event vector store for session: ${sessionId.substring(0, 8)}`);
-      return vectorStore;
-    } catch (error) {
-      console.error(`⚠️  Could not load event vector store for ${sessionId}:`, error.message);
+  try {
+    const client = getChromaClient();
+    const collectionName = getSessionCollectionName(sessionId);
+
+    // Check if collection exists
+    const collections = await client.listCollections();
+    const exists = collections.some((col) => col.name === collectionName);
+
+    if (!exists) {
       return null;
     }
+
+    // Load existing collection
+    const vectorStore = await Chroma.fromExistingCollection(embeddings, {
+      collectionName,
+      url: CHROMA_URL,
+    });
+
+    console.log(
+      `   ✅ Loaded event vector store for session: ${sessionId.substring(
+        0,
+        8
+      )}`
+    );
+    return vectorStore;
+  } catch (error) {
+    console.warn(
+      `⚠️  Could not load event vector store for ${sessionId}:`,
+      error.message
+    );
+    return null;
   }
-  
-  return null;
 }
 
 /**
- * Save event vector store to disk
- * 
+ * Delete event vector store for a session
+ *
  * @param {string} sessionId - Session identifier
- * @param {HNSWLib} vectorStore - Vector store instance to save
  * @returns {Promise<void>}
  */
-export async function saveEventVectorStore(sessionId, vectorStore) {
-  const storePath = path.join('./vector_store/sessions', sessionId);
-  
-  // Create directory if it doesn't exist
-  const dir = path.dirname(storePath);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+export async function deleteEventVectorStore(sessionId) {
+  try {
+    const client = getChromaClient();
+    const collectionName = getSessionCollectionName(sessionId);
+
+    await client.deleteCollection({ name: collectionName });
+    console.log(
+      `   🗑️  Deleted event vector store for session: ${sessionId.substring(
+        0,
+        8
+      )}`
+    );
+  } catch (error) {
+    if (error.message.includes("not found")) {
+      console.log(
+        `   ℹ️  Event vector store not found for session: ${sessionId.substring(
+          0,
+          8
+        )}`
+      );
+    } else {
+      console.error(`❌ Failed to delete event vector store:`, error);
+      throw error;
+    }
   }
-  
-  await vectorStore.save(storePath);
-  console.log(`   💾 Saved event vector store for session: ${sessionId.substring(0, 8)}`);
 }
 
 /**
  * Add Assurance events to session vector store
  * 
- * Optimized for batch processing:
+ * Optimized for batch processing with rich metadata:
  * - Processes events in batches to optimize memory usage
- * - Formats events for semantic search
- * - Handles large event arrays efficiently
+ * - Extracts semantic content for embeddings
+ * - Stores rich metadata for filtering and relationships
+ * - Preserves full event for display
  * 
- * INTEGRATION POINT: Team members should customize event parsing here
- * 
- * @param {HNSWLib} vectorStore - Session's event vector store
+ * @param {Chroma} vectorStore - Session's event vector store
  * @param {Array} events - Array of Assurance event objects
  * @param {number} batchSize - Optional batch size (default: from config)
  * @returns {Promise<void>}
@@ -115,47 +243,103 @@ export async function addEventsToVectorStore(
     for (let i = 0; i < events.length; i += batchSize) {
       const batch = events.slice(i, i + batchSize);
 
-      // Format batch events as searchable text
-      // Truncate payloads to stay within embedding model's 2048 token limit
-      // Real Assurance events (especially in-app messages) can have HUGE HTML/CSS/JS payloads
-      const MAX_PAYLOAD_CHARS = 400; // ~100 tokens per event (safe for even extreme cases)
-      let truncatedCount = 0;
-      
-      const eventTexts = batch.map((event) => {
-        const payloadStr = JSON.stringify(event.payload || {}, null, 2);
-        const isTruncated = payloadStr.length > MAX_PAYLOAD_CHARS;
-        if (isTruncated) truncatedCount++;
-        
-        const truncatedPayload = isTruncated
-          ? payloadStr.substring(0, MAX_PAYLOAD_CHARS) + '\n... [truncated]'
-          : payloadStr;
+      // Format batch events with smart extraction and rich metadata
+      const documents = batch.map((event) => {
+        const payload = event.payload || {};
+        const eventData = payload.ACPExtensionEventData || {};
 
-        return `
-Event Type: ${event.type || "unknown"}
-Event Name: ${event.name || "unnamed"}
-Timestamp: ${event.timestamp || "unknown"}
-Payload: ${truncatedPayload}
-        `.trim();
+        // Extract semantic content for embedding
+        const semanticParts = [];
+
+        // 1. SDK/Extension Events (ACPExtensionEvent* pattern)
+        if (payload.ACPExtensionEventType) {
+          semanticParts.push(`SDK Extension: ${payload.ACPExtensionEventType}`);
+          semanticParts.push(`Event: ${payload.ACPExtensionEventName}`);
+          if (payload.ACPExtensionEventSource) {
+            semanticParts.push(`Source: ${payload.ACPExtensionEventSource}`);
+          }
+        }
+        // 2. Backend/Service Events
+        else {
+          semanticParts.push(`Vendor: ${event.vendor}`);
+          semanticParts.push(`Type: ${event.type}`);
+          if (payload.name) {
+            semanticParts.push(`Service: ${payload.name}`);
+          }
+        }
+
+        // 3. Error Information (highest priority - prepend)
+        const errorInfo = extractErrorInfo(event);
+        if (errorInfo) {
+          semanticParts.unshift(`🚨 ERROR: ${errorInfo}`);
+        }
+
+        // 4. Actions & State Changes
+        if (eventData.action) {
+          semanticParts.push(`Action: ${eventData.action}`);
+        }
+        if (eventData.stateowner) {
+          semanticParts.push(`State Owner: ${eventData.stateowner}`);
+        }
+
+        // 5. Important messages
+        if (payload.messages && Array.isArray(payload.messages)) {
+          const messages = payload.messages
+            .filter((m) => typeof m === "string" && m.length < 200)
+            .join(" ");
+          if (messages) {
+            semanticParts.push(messages);
+          }
+        }
+
+        const semanticContent = semanticParts.filter(Boolean).join("\n");
+
+        // Build rich metadata for filtering and relationships
+        const metadata = {
+          // Identity & Relationships (for story building)
+          eventId: payload.ACPExtensionEventUniqueIdentifier || event.uuid,
+          parentEventId: payload.ACPExtensionEventParentIdentifier || null,
+          requestId:
+            eventData.requestId || payload.attributes?.requestId || null,
+
+          // Categorization (field-based, not hardcoded)
+          isSDKEvent: !!payload.ACPExtensionEventType,
+          sdkExtension: payload.ACPExtensionEventType || null,
+          eventName: payload.ACPExtensionEventName || null,
+          eventSource: payload.ACPExtensionEventSource || null,
+          vendor: event.vendor || null,
+          serviceType: event.type || null,
+
+          // Error Detection
+          hasError: detectError(event),
+          statusCode:
+            eventData.status ||
+            payload.status ||
+            payload.context?.status ||
+            null,
+          logLevel: payload.logLevel || null,
+
+          // State Changes (critical for story building)
+          hasStateChange:
+            !!eventData.stateowner || !!payload.metadata?.["state.data"],
+          stateOwner: eventData.stateowner || null,
+
+          // Timing
+          timestamp: event.timestamp,
+          eventNumber: event.eventNumber || 0,
+
+          // Store full event as JSON string (for display)
+          rawEvent: JSON.stringify(event),
+        };
+
+        return {
+          pageContent: semanticContent,
+          metadata,
+        };
       });
 
-      if (truncatedCount > 0) {
-        console.log(`   ✂️  Truncated ${truncatedCount}/${batch.length} events (large payloads)`);
-      }
-
-      const metadata = batch.map((event) => ({
-        eventId: event.id || event.eventId,
-        eventType: event.type,
-        eventName: event.name,
-        timestamp: event.timestamp,
-      }));
-
       // Add batch to vector store (embeddings created here)
-      await vectorStore.addDocuments(
-        eventTexts.map((text, idx) => ({
-          pageContent: text,
-          metadata: metadata[idx],
-        }))
-      );
+      await vectorStore.addDocuments(documents);
 
       // Progress logging for large batches
       if (events.length > batchSize) {
@@ -175,38 +359,254 @@ Payload: ${truncatedPayload}
 }
 
 /**
+ * Extract error information from event (universal patterns)
+ * @param {object} event - Assurance event
+ * @returns {string|null} Error description or null
+ */
+function extractErrorInfo(event) {
+  const payload = event.payload || {};
+  const eventData = payload.ACPExtensionEventData || {};
+  const context = payload.context || {};
+
+  // Pattern 1: Explicit error in ACPExtensionEventData (SDK events)
+  if (eventData.status >= 400 || eventData.title || eventData.detail) {
+    return `${eventData.status || ""} ${eventData.title || ""} - ${
+      eventData.detail || ""
+    }`.trim();
+  }
+
+  // Pattern 2: Backend error with status in context
+  if (context.status && context.status >= 400) {
+    const messages = Array.isArray(payload.messages)
+      ? payload.messages.join(" ")
+      : payload.messages || "";
+    return `${context.status} ${context.errorType || ""} - ${messages}`
+      .trim()
+      .substring(0, 200);
+  }
+
+  // Pattern 3: Error in logLevel with messages
+  if (payload.logLevel === "error" && payload.messages) {
+    return Array.isArray(payload.messages)
+      ? payload.messages.join(" ").substring(0, 200)
+      : payload.messages.substring(0, 200);
+  }
+
+  // Pattern 4: Error in event source (SDK events)
+  if (payload.ACPExtensionEventSource?.includes("error")) {
+    return `Error from ${payload.ACPExtensionEventName || "unknown"}`;
+  }
+
+  // Pattern 5: Error in payload.errors array
+  if (
+    payload.errors &&
+    Array.isArray(payload.errors) &&
+    payload.errors.length > 0
+  ) {
+    return JSON.stringify(payload.errors).substring(0, 200);
+  }
+
+  return null;
+}
+
+/**
+ * Detect if event contains an error (universal patterns)
+ * @param {object} event - Assurance event
+ * @returns {boolean}
+ */
+function detectError(event) {
+  const payload = event.payload || {};
+  const eventData = payload.ACPExtensionEventData || {};
+  const context = payload.context || {};
+
+  return (
+    // SDK event error patterns
+    (eventData.status && eventData.status >= 400) ||
+    (payload.ACPExtensionEventSource &&
+      payload.ACPExtensionEventSource.includes("error")) ||
+    (eventData.title && eventData.title.toLowerCase().includes("fail")) ||
+    // Backend event error patterns
+    payload.logLevel === "error" ||
+    (context.status && context.status >= 400) ||
+    payload.name?.includes("/error") ||
+    // General error patterns
+    (payload.errors &&
+      Array.isArray(payload.errors) &&
+      payload.errors.length > 0)
+  );
+}
+
+/**
  * Search for relevant events in vector store
- * 
- * @param {HNSWLib} vectorStore - Session's event vector store
+ *
+ * @param {Chroma} vectorStore - Session's event vector store
  * @param {string} query - Search query
  * @param {number} k - Number of results to return
- * @returns {Promise<Array>} Relevant event documents
+ * @param {object} filters - Optional metadata filters
+ * @returns {Promise<Array>} Relevant event documents with parsed rawEvent
  */
-export async function searchEvents(vectorStore, query, k = 5) {
+export async function searchEvents(vectorStore, query, k = 5, filters = {}) {
   try {
-    const results = await vectorStore.similaritySearch(query, k);
-    return results;
+    // Build where clause from filters
+    const where = {};
+
+    if (filters.hasError !== undefined) {
+      where.hasError = filters.hasError;
+    }
+    if (filters.isSDKEvent !== undefined) {
+      where.isSDKEvent = filters.isSDKEvent;
+    }
+    if (filters.sdkExtension) {
+      where.sdkExtension = filters.sdkExtension;
+    }
+    if (filters.vendor) {
+      where.vendor = filters.vendor;
+    }
+    if (filters.requestId) {
+      where.requestId = filters.requestId;
+    }
+
+    // Perform semantic search with metadata filtering
+    const results = await vectorStore.similaritySearch(
+      query,
+      k,
+      Object.keys(where).length > 0 ? where : undefined
+    );
+
+    // Parse rawEvent from JSON string
+    return results.map((doc) => ({
+      ...doc,
+      rawEvent: JSON.parse(doc.metadata.rawEvent),
+    }));
   } catch (error) {
-    console.error('❌ Failed to search events:', error);
+    console.error("❌ Failed to search events:", error);
+    return [];
+  }
+}
+
+/**
+ * Get events by requestId (for story building)
+ *
+ * @param {string} sessionId - Session identifier
+ * @param {string} requestId - Request ID to filter by
+ * @returns {Promise<Array>} Events with matching requestId
+ */
+export async function getEventsByRequestId(sessionId, requestId) {
+  try {
+    const client = getChromaClient();
+    const collectionName = getSessionCollectionName(sessionId);
+
+    const collection = await client.getCollection({ name: collectionName });
+
+    const results = await collection.get({
+      where: { requestId },
+    });
+
+    if (!results.documents || results.documents.length === 0) {
+      return [];
+    }
+
+    return results.documents.map((doc, i) => ({
+      pageContent: doc,
+      metadata: results.metadatas[i],
+      rawEvent: JSON.parse(results.metadatas[i].rawEvent),
+    }));
+  } catch (error) {
+    console.error("❌ Failed to get events by requestId:", error);
+    return [];
+  }
+}
+
+/**
+ * Get event by ID (for story building)
+ *
+ * @param {string} sessionId - Session identifier
+ * @param {string} eventId - Event ID to retrieve
+ * @returns {Promise<object|null>} Event document or null if not found
+ */
+export async function getEventById(sessionId, eventId) {
+  try {
+    const client = getChromaClient();
+    const collectionName = getSessionCollectionName(sessionId);
+
+    const collection = await client.getCollection({ name: collectionName });
+
+    const results = await collection.get({
+      where: { eventId },
+    });
+
+    if (!results.documents || results.documents.length === 0) {
+      return null;
+    }
+
+    return {
+      pageContent: results.documents[0],
+      metadata: results.metadatas[0],
+      rawEvent: JSON.parse(results.metadatas[0].rawEvent),
+    };
+  } catch (error) {
+    console.error("❌ Failed to get event by ID:", error);
+    return null;
+  }
+}
+
+/**
+ * Get events by parent event ID (for story building - find children)
+ *
+ * @param {string} sessionId - Session identifier
+ * @param {string} parentEventId - Parent event ID
+ * @returns {Promise<Array>} Child events
+ */
+export async function getEventsByParentId(sessionId, parentEventId) {
+  try {
+    const client = getChromaClient();
+    const collectionName = getSessionCollectionName(sessionId);
+
+    const collection = await client.getCollection({ name: collectionName });
+
+    const results = await collection.get({
+      where: { parentEventId },
+    });
+
+    if (!results.documents || results.documents.length === 0) {
+      return [];
+    }
+
+    return results.documents.map((doc, i) => ({
+      pageContent: doc,
+      metadata: results.metadatas[i],
+      rawEvent: JSON.parse(results.metadatas[i].rawEvent),
+    }));
+  } catch (error) {
+    console.error("❌ Failed to get events by parentId:", error);
     return [];
   }
 }
 
 /**
  * Get event statistics from vector store
- * 
- * INTEGRATION POINT: Team can add analytics here
- * 
- * @param {HNSWLib} vectorStore - Session's event vector store
+ *
+ * @param {string} sessionId - Session identifier
  * @returns {Promise<Object>} Statistics about stored events
  */
-export async function getEventStats(vectorStore) {
-  // TODO: Team can implement detailed analytics
-  // For now, return basic info
-  
-  return {
-    message: 'Event statistics - to be implemented by event analysis team',
-    totalEvents: 0  // Team to implement actual count
-  };
-}
+export async function getEventStats(sessionId) {
+  try {
+    const client = getChromaClient();
+    const collectionName = getSessionCollectionName(sessionId);
 
+    const collection = await client.getCollection({ name: collectionName });
+    const count = await collection.count();
+
+    return {
+      totalEvents: count,
+      sessionId,
+    };
+  } catch (error) {
+    console.error("❌ Failed to get event stats:", error);
+    return {
+      totalEvents: 0,
+      sessionId,
+      error: error.message,
+    };
+  }
+}

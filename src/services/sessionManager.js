@@ -113,7 +113,7 @@ class SessionManager {
    * to access session-specific event embeddings for semantic search
    *
    * @param {string} sessionId
-   * @returns {HNSWLib} Event vector store instance
+   * @returns {Chroma} Event vector store instance (ChromaDB)
    */
   getEventVectorStore(sessionId) {
     const eventStore = this.eventVectorStores.get(sessionId);
@@ -209,7 +209,7 @@ class SessionManager {
 
     console.log(
       `✅ [${sessionId.substring(0, 8)}] Added ${newEvents.length} events ` +
-          `(${duplicateCount} duplicates skipped, total: ${session.events.length})`
+        `(${duplicateCount} duplicates skipped, total: ${session.events.length})`
     );
 
     return {
@@ -241,13 +241,23 @@ class SessionManager {
   /**
    * Delete a session and its associated data
    * @param {string} sessionId
-   * @returns {boolean} True if deleted, false if not found
+   * @returns {Promise<boolean>} True if deleted, false if not found
    */
-  deleteSession(sessionId) {
+  async deleteSession(sessionId) {
     const deleted = this.sessions.delete(sessionId);
     this.eventVectorStores.delete(sessionId);
 
+    // Delete ChromaDB collection
     if (deleted) {
+      const { deleteEventVectorStore } = await import("./eventVectorStore.js");
+      try {
+        await deleteEventVectorStore(sessionId);
+      } catch (error) {
+        console.warn(
+          `⚠️  Failed to delete event vector store for ${sessionId}:`,
+          error.message
+        );
+      }
       console.log(`🗑️  Session deleted: ${sessionId}`);
     }
 

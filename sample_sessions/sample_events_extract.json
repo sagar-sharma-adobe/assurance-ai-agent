@@ -1,0 +1,91 @@
+[
+  {
+    "uuid": "75369f8f-2daa-4337-8b7d-48cb3bfede1a",
+    "eventNumber": 0,
+    "clientId": "7db2c7e9-3740-423f-a274-217efb301190",
+    "timestamp": 1765883194040,
+    "vendor": "com.adobe.griffon.mobile",
+    "type": "client",
+    "payload": {
+      "type": "disconnect"
+    },
+    "annotations": []
+  },
+  {
+    "uuid": "561b821e-ceab-48ba-b69d-4f818a11bb7b",
+    "eventNumber": 0,
+    "clientId": null,
+    "timestamp": 1765882152877,
+    "vendor": "com.adobe.cepheus",
+    "type": "Push Service",
+    "payload": {
+      "elapsed": 1392,
+      "groupID": "test-push-40557dc1-3d83-4375-8d72-3a63114c4554",
+      "pushTokens": "80A9C1C7F8DF2D86F4AB351B777BB7CFA52F76B02CDC69CE5DC8878828641FC2B26668DF18C74856A555EA151DD01969E543D9DFA03AD35AF0FB1AF0FF076A682E75A576527ABC0122F55A938EC019AC",
+      "event": "push sent to platform service",
+      "body": "",
+      "platform": "apnsSandbox",
+      "status": 200
+    },
+    "annotations": []
+  },
+  {
+    "uuid": "250a6d61-24b4-4fce-a965-a2c7aef2c269",
+    "eventNumber": 0,
+    "clientId": null,
+    "timestamp": 1765882151348,
+    "vendor": "com.adobe.cepheus",
+    "type": "Push Service",
+    "payload": {
+      "duplicatePushToken": "80a9c1c7f8df2d86f4ab351b777bb7cfa52f76b02cdc69ce5dc8878828641fc2b26668df18c74856a555ea151dd01969e543d9dfa03ad35af0fb1af0ff076a682e75a576527abc0122f55a938ec019ac",
+      "groupID": "test-push-40557dc1-3d83-4375-8d72-3a63114c4554",
+      "pushTokens": "80A9C1C7F8DF2D86F4AB351B777BB7CFA52F76B02CDC69CE5DC8878828641FC2B26668DF18C74856A555EA151DD01969E543D9DFA03AD35AF0FB1AF0FF076A682E75A576527ABC0122F55A938EC019AC",
+      "event": "push passed deduplication step",
+      "platform": "apnsSandbox"
+    },
+    "annotations": []
+  },
+  {
+    "uuid": "368148f1-f140-4fb4-88b1-5c8673510eec",
+    "eventNumber": 0,
+    "clientId": null,
+    "timestamp": 1765882151282,
+    "vendor": "com.adobe.cepheus",
+    "type": "Push Service",
+    "payload": {
+      "groupID": "test-push-40557dc1-3d83-4375-8d72-3a63114c4554",
+      "pushTokens": "80A9C1C7F8DF2D86F4AB351B777BB7CFA52F76B02CDC69CE5DC8878828641FC2B26668DF18C74856A555EA151DD01969E543D9DFA03AD35AF0FB1AF0FF076A682E75A576527ABC0122F55A938EC019AC",
+      "event": "push request from pipeline",
+      "platform": "apnsSandbox"
+    },
+    "annotations": []
+  },
+  {
+    "uuid": "e72013d4-20b3-46d6-8e2c-259f0248022e",
+    "eventNumber": 86,
+    "clientId": "7db2c7e9-3740-423f-a274-217efb301190",
+    "timestamp": 1765882129451,
+    "vendor": "com.adobe.griffon.mobile",
+    "type": "generic",
+    "payload": {
+      "ACPExtensionEventSource": "com.adobe.eventsource.applicationclose",
+      "ACPExtensionEventParentIdentifier": "6E1E51AE-A9B9-49B7-B118-8034EB36DFB8",
+      "ACPExtensionEventName": "Application Close (Background)",
+      "ACPExtensionEventType": "com.adobe.eventtype.lifecycle",
+      "ACPExtensionEventTimestamp": 1765882129437.684,
+      "ACPExtensionEventUniqueIdentifier": "EB14412A-C4EF-404A-A611-C9C3B62E45DF",
+      "ACPExtensionEventData": {
+        "xdm": {
+          "application": {
+            "sessionLength": 222,
+            "closeType": "close",
+            "isClose": true
+          },
+          "timestamp": "2025-12-16T10:48:48.736Z",
+          "eventType": "application.close"
+        }
+      }
+    },
+    "annotations": []
+  }
+]

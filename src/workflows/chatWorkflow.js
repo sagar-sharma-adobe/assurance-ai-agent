@@ -3,7 +3,7 @@
  * Orchestrates the entire conversation flow
  */
 
-import { StateGraph, END } from "@langchain/langgraph";
+import { StateGraph, START, END } from "@langchain/langgraph";
 import { GraphState } from "./state.js";
 
 // Import nodes
@@ -18,22 +18,20 @@ import { generateResponse } from "./nodes/responseGenerator.js";
 export function createChatWorkflow() {
   // Initialize graph with state schema
   const workflow = new StateGraph(GraphState);
-  
+
   // Add nodes
   workflow.addNode("classifyIntent", classifyIntent);
   workflow.addNode("retrieveContexts", retrieveContexts);
   workflow.addNode("formatContexts", formatContexts);
   workflow.addNode("generateResponse", generateResponse);
-  
-  // Set entry point
-  workflow.setEntryPoint("classifyIntent");
-  
+
   // Define edges (flow control)
+  workflow.addEdge(START, "classifyIntent"); // Entry point
   workflow.addEdge("classifyIntent", "retrieveContexts");
   workflow.addEdge("retrieveContexts", "formatContexts");
   workflow.addEdge("formatContexts", "generateResponse");
   workflow.addEdge("generateResponse", END);
-  
+
   // Compile the graph
   return workflow.compile();
 }

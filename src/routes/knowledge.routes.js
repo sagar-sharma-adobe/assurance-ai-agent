@@ -362,15 +362,19 @@ router.post("/upload", upload.single("document"), async (req, res) => {
 /**
  * POST /api/knowledge/load-batch
  * Load multiple documents from URLs in batch
+ * 
+ * IMPORTANT: Processes documents sequentially to ensure proper caching
+ * and avoid overwhelming ChromaDB with parallel writes.
  *
  * Body: {
  *   urls: string[],
  *   chunkSize?: number,
- *   chunkOverlap?: number
+ *   chunkOverlap?: number,
+ *   delayMs?: number (delay between documents, default: 500ms)
  * }
  */
 router.post("/load-batch", async (req, res) => {
-  const { urls, chunkSize, chunkOverlap } = req.body;
+  const { urls, chunkSize, chunkOverlap, delayMs = 500 } = req.body;
 
   if (!urls || !Array.isArray(urls) || urls.length === 0) {
     return res.status(400).json({
@@ -380,48 +384,84 @@ router.post("/load-batch", async (req, res) => {
   }
 
   try {
-    console.log(`📥 Batch loading ${urls.length} documents...`);
+    console.log(
+      `📥 Batch loading ${urls.length} documents (sequential processing)...`
+    );
 
-    const sources = urls.map((url) => ({ type: "url", url }));
-    const result = await loadDocuments(sources, { chunkSize, chunkOverlap });
-
-    // Add successful documents to vector store
     const vectorStore = getVectorStore();
-    for (const doc of result.documents) {
-      await vectorStore.addDocuments(doc.chunks);
+    const successfulDocs = [];
+    const errors = [];
 
-      addDocumentMetadata({
-        id: doc.id,
-        type: "url",
-        title: doc.title,
-        url: doc.source,
-        loadedAt: new Date().toISOString(),
-        chunkCount: doc.chunkCount,
-        contentLength: doc.contentLength,
-        status: "loaded",
-      });
+    // Process each URL sequentially to ensure proper caching
+    for (let i = 0; i < urls.length; i++) {
+      const url = urls[i];
+
+      try {
+        console.log(`   [${i + 1}/${urls.length}] Loading: ${url}`);
+
+        // Load single document
+        const document = await loadDocument(
+          { type: "url", url },
+          { chunkSize, chunkOverlap }
+        );
+
+        // Add to vector store (wait for embeddings to complete)
+        await vectorStore.addDocuments(document.chunks);
+
+        // Track metadata
+        addDocumentMetadata({
+          id: document.id,
+          type: "url",
+          title: document.title,
+          url,
+          loadedAt: new Date().toISOString(),
+          chunkCount: document.chunkCount,
+          contentLength: document.contentLength,
+          status: "loaded",
+        });
+
+        successfulDocs.push({
+          id: document.id,
+          title: document.title,
+          source: url,
+          chunkCount: document.chunkCount,
+        });
+
+        console.log(
+          `   ✅ Cached: ${document.title} (${document.chunkCount} chunks)`
+        );
+
+        // Add delay before next document (except for last one)
+        if (i < urls.length - 1 && delayMs > 0) {
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
+      } catch (error) {
+        console.error(`   ❌ Failed to load ${url}:`, error.message);
+        errors.push({
+          source: { url },
+          error: error.message,
+        });
+      }
     }
 
     // Save vector store
     await saveVectorStore();
 
+    const successCount = successfulDocs.length;
+    const errorCount = errors.length;
+
     console.log(
-      `✅ Batch load complete: ${result.successCount}/${urls.length} successful`
+      `✅ Batch load complete: ${successCount}/${urls.length} successful`
     );
 
     res.json({
       success: true,
-      message: `Loaded ${result.successCount}/${urls.length} documents`,
+      message: `Loaded ${successCount}/${urls.length} documents`,
       results: {
-        successCount: result.successCount,
-        errorCount: result.errorCount,
-        documents: result.documents.map((d) => ({
-          id: d.id,
-          title: d.title,
-          source: d.source,
-          chunkCount: d.chunkCount,
-        })),
-        errors: result.errors,
+        successCount,
+        errorCount,
+        documents: successfulDocs,
+        errors: errors.length > 0 ? errors : undefined,
       },
     });
   } catch (error) {

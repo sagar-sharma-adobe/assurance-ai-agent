@@ -373,8 +373,8 @@ export async function formatContexts(state) {
   const { rawEvents, rawDocs, intent, conversationHistory } = state;
   
   // Calculate token budget
-  const TOTAL_BUDGET = 6000;
-  const SYSTEM_PROMPT_TOKENS = 250;
+  const TOTAL_BUDGET = 10000;
+  const SYSTEM_PROMPT_TOKENS = 500;
   const USER_MESSAGE_TOKENS = estimateTokens(state.userMessage);
   const RESPONSE_BUFFER = 2000;
   
